@@ -1,35 +1,53 @@
 using UnityEngine;
-using System.Collections.Generic;
+using UnityEngine.InputSystem;
+
+public enum Judgement { Perfect, Great, Good, Ok, Meh, Miss }
 
 public class HitDetector : MonoBehaviour
 {
     public KeyCode laneKey;
     public float laneY;
+    public float OD = 8f;
+
+    private float perfectWindow;
+    private float greatWindow;
+    private float goodWindow;
+    private float okWindow;
+    private float mehWindow;
+
+    void Start()
+    {
+        perfectWindow = 16f / 1000f;
+        greatWindow = (64f - 3f * OD) / 1000f;
+        goodWindow = (97f - 3f * OD) / 1000f;
+        okWindow = (127f - 3f * OD) / 1000f;
+        mehWindow = (151f - 3f * OD) / 1000f;
+    }
 
     void Update()
     {
-        if (Input.GetKeyDown(laneKey))
-        {
-            NoteObject closest = FindClosestNote();
-            if (closest == null)
-            {
-                Debug.Log(laneKey + " - Miss");
-                return;
-            }
+        if (!Input.GetKeyDown(laneKey)) return;
 
-            float delta = Mathf.Abs(Conductor.instance.songPosition - closest.beatTime);
+        NoteObject closest = FindClosestNote();
+        if (closest == null) return;
 
-            if (delta < 0.05f)
-                Debug.Log(laneKey + " - PERFECT! (" + delta + ")");
-            else if (delta < 0.1f)
-                Debug.Log(laneKey + " - Good (" + delta + ")");
-            else if (delta < 0.15f)
-                Debug.Log(laneKey + " - OK (" + delta + ")");
-            else
-                Debug.Log(laneKey + " - Miss (" + delta + ")");
+        float delta = Mathf.Abs(Conductor.instance.songPosition - closest.beatTime);
 
-            if (delta < 0.15f) Destroy(closest.gameObject);
-        }
+        if (delta > mehWindow) return;
+
+        Judgement judgement = GetJudgement(delta);
+        Destroy(closest.gameObject);
+        ScoreManager.instance.RegisterHit(judgement);
+    }
+
+    Judgement GetJudgement(float delta)
+    {
+        if (delta < perfectWindow) return Judgement.Perfect;
+        if (delta < greatWindow) return Judgement.Great;
+        if (delta < goodWindow) return Judgement.Good;
+        if (delta < okWindow) return Judgement.Ok;
+        if (delta < mehWindow) return Judgement.Meh;
+        return Judgement.Miss;
     }
 
     NoteObject FindClosestNote()
