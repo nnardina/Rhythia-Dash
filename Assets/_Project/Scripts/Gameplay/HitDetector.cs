@@ -1,7 +1,6 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-public enum Judgement { Perfect, Great, Good, Ok, Meh, Miss }
+public enum Judgement { Hit300, Hit100, Hit50, Miss }
 
 public class HitDetector : MonoBehaviour
 {
@@ -9,45 +8,80 @@ public class HitDetector : MonoBehaviour
     public float laneY;
     public float OD = 8f;
 
-    private float perfectWindow;
-    private float greatWindow;
-    private float goodWindow;
-    private float okWindow;
-    private float mehWindow;
+    private float window300;
+    private float window100;
+    private float window50;
+
+    private NoteObject heldNote = null;
 
     void Start()
     {
-        perfectWindow = 16f / 1000f;
-        greatWindow = (64f - 3f * OD) / 1000f;
-        goodWindow = (97f - 3f * OD) / 1000f;
-        okWindow = (127f - 3f * OD) / 1000f;
-        mehWindow = (151f - 3f * OD) / 1000f;
+        window300 = (80f - 6f * OD) / 1000f;
+        window100 = (140f - 8f * OD) / 1000f;
+        window50 = (200f - 10f * OD) / 1000f;
     }
 
     void Update()
     {
-        if (!Input.GetKeyDown(laneKey)) return;
+        if (Input.GetKeyDown(laneKey)) HandleKeyDown();
+        if (Input.GetKeyUp(laneKey)) HandleKeyUp();
+    }
 
+    void HandleKeyDown()
+    {
         NoteObject closest = FindClosestNote();
         if (closest == null) return;
 
-        float delta = Mathf.Abs(Conductor.instance.songPosition - closest.beatTime);
+        float delta = Conductor.instance.songPosition - closest.beatTime;
+        float absDelta = Mathf.Abs(delta);
+        float windowMiss = NoteObject.ARToPreempt(closest.AR);
 
-        if (delta > mehWindow) return;
+        if (absDelta > windowMiss) return;
 
-        Judgement judgement = GetJudgement(delta);
-        Destroy(closest.gameObject);
-        ScoreManager.instance.RegisterHit(judgement);
+        if (absDelta > window50)
+        {
+            ScoreManager.instance.RegisterHit(Judgement.Miss);
+            Destroy(closest.gameObject);
+            return;
+        }
+
+        Judgement headJudgement = GetJudgement(absDelta);
+        ScoreManager.instance.RegisterHit(headJudgement);
+
+        if (closest.isLongNote)
+        {
+            closest.isBeingHeld = true;
+            heldNote = closest;
+        }
+        else
+        {
+            Destroy(closest.gameObject);
+        }
+    }
+
+    void HandleKeyUp()
+    {
+        if (heldNote == null) return;
+
+        if (heldNote == null)
+        {
+            heldNote = null;
+            return;
+        }
+
+        float songPos = Conductor.instance.songPosition;
+        Judgement tailJudgement = heldNote.GetTailJudgement(songPos, window300, window100, window50);
+        ScoreManager.instance.RegisterHit(tailJudgement);
+
+        Destroy(heldNote.gameObject);
+        heldNote = null;
     }
 
     Judgement GetJudgement(float delta)
     {
-        if (delta < perfectWindow) return Judgement.Perfect;
-        if (delta < greatWindow) return Judgement.Great;
-        if (delta < goodWindow) return Judgement.Good;
-        if (delta < okWindow) return Judgement.Ok;
-        if (delta < mehWindow) return Judgement.Meh;
-        return Judgement.Miss;
+        if (delta <= window300) return Judgement.Hit300;
+        if (delta <= window100) return Judgement.Hit100;
+        return Judgement.Hit50;
     }
 
     NoteObject FindClosestNote()
@@ -57,7 +91,10 @@ public class HitDetector : MonoBehaviour
 
         foreach (var note in FindObjectsByType<NoteObject>())
         {
+            if (note.isBeingHeld) continue;
+
             if (Mathf.Abs(note.transform.position.y - laneY) > 0.5f) continue;
+
             float delta = Mathf.Abs(Conductor.instance.songPosition - note.beatTime);
             if (delta < minDelta)
             {

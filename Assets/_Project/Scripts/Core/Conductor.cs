@@ -2,35 +2,40 @@ using UnityEngine;
 
 public class Conductor : MonoBehaviour
 {
-    [Header("Song Settings")]
-    public float songBpm;
-    public float firstBeatOffset;
-
-    [Header("Tracking")]
+    [Header("Tracking (read-only)")]
     public float songPosition;
     public float songPositionInBeats;
-    public float dspSongTime;
 
     public static Conductor instance;
+
     private AudioSource audioSource;
+    private float       dspSongTime;
+    private float       firstBeatOffset;
+    private float       secPerBeat;
 
     void Awake()
     {
         if (instance == null) instance = this;
         else Destroy(gameObject);
+
+        audioSource = GetComponent<AudioSource>();
     }
 
-    void Start()
+    public void SetClipAndPlay(AudioClip clip, float bpm, float firstBeatOffset)
     {
-        audioSource = GetComponent<AudioSource>();
-        dspSongTime = (float)AudioSettings.dspTime;
+        this.firstBeatOffset = firstBeatOffset;
+        this.secPerBeat      = 60f / bpm;
+
+        audioSource.clip = clip;
+        dspSongTime      = (float)AudioSettings.dspTime;
         audioSource.Play();
     }
 
     void Update()
     {
-        songPosition = (float)(AudioSettings.dspTime - dspSongTime) - firstBeatOffset;
-        if (songPosition < 0) return;
-        songPositionInBeats = songPosition / (60f / songBpm);
+        if (!audioSource.isPlaying) return;
+
+        songPosition        = (float)(AudioSettings.dspTime - dspSongTime);
+        songPositionInBeats = (songPosition - firstBeatOffset) / secPerBeat;
     }
 }

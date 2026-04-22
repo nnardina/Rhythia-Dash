@@ -8,11 +8,9 @@ public class ScoreManager : MonoBehaviour
     public int score;
     public int combo;
     public int maxCombo;
-    public int perfectCount;
-    public int greatCount;
-    public int goodCount;
-    public int okCount;
-    public int mehCount;
+    public int count300;
+    public int count100;
+    public int count50;
     public int missCount;
 
     private int totalNotes;
@@ -29,29 +27,19 @@ public class ScoreManager : MonoBehaviour
 
         switch (judgement)
         {
-            case Judgement.Perfect:
-                score += 320 * combo;
-                perfectCount++;
+            case Judgement.Hit300:
+                score += 300 * (combo + 1);
+                count300++;
                 combo++;
                 break;
-            case Judgement.Great:
-                score += 300 * combo;
-                greatCount++;
+            case Judgement.Hit100:
+                score += 100 * (combo + 1);
+                count100++;
                 combo++;
                 break;
-            case Judgement.Good:
-                score += 200 * combo;
-                goodCount++;
-                combo++;
-                break;
-            case Judgement.Ok:
-                score += 100 * combo;
-                okCount++;
-                combo++;
-                break;
-            case Judgement.Meh:
-                score += 50 * combo;
-                mehCount++;
+            case Judgement.Hit50:
+                score += 50 * (combo + 1);
+                count50++;
                 combo++;
                 break;
             case Judgement.Miss:
@@ -67,7 +55,7 @@ public class ScoreManager : MonoBehaviour
     public float GetAccuracy()
     {
         if (totalNotes == 0) return 100f;
-        return (float)(perfectCount * 320 + greatCount * 300 + goodCount * 200 + okCount * 100 + mehCount * 50)
-               / (totalNotes * 320) * 100f;
+        return (float)(count300 * 300 + count100 * 100 + count50 * 50)
+               / (totalNotes * 300) * 100f;
     }
 }
