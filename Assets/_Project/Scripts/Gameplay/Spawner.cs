@@ -10,12 +10,22 @@ public class Spawner : MonoBehaviour
     public GameObject notePrefab;
     public Conductor conductor;
 
+    [Header("Sprites Outer (lanes 1 & 4)")]
+    public Sprite outerHead;
+    public Sprite outerBody;
+    public Sprite outerTail;
+
+    [Header("Sprites Inner (lanes 2 & 3)")]
+    public Sprite innerHead;
+    public Sprite innerBody;
+    public Sprite innerTail;
+
     [Header("Map")]
-    [Tooltip("Имя файла .osu.")]
+    [Tooltip("Имя файла .osu в папке StreamingAssets (например: map.osu)")]
     public string osuFileName = "map.osu";
 
     [Header("Lanes")]
-    public float[] laneYPositions = { 3f, 1f, -1f, -3f };
+    public float[] laneXPositions = { -3f, -1f, 1f, 3f };
 
     private List<NoteData> notes = new List<NoteData>();
     private int nextIndex = 0;
@@ -88,8 +98,8 @@ public class Spawner : MonoBehaviour
 
     void SpawnNote(NoteData data)
     {
-        int lane = Mathf.Clamp(data.lane, 0, laneYPositions.Length - 1);
-        float y = laneYPositions[lane];
+        int lane = Mathf.Clamp(data.lane, 0, laneXPositions.Length - 1);
+        float x = laneXPositions[lane];
 
         GameObject obj = Instantiate(notePrefab);
         NoteObject note = obj.GetComponent<NoteObject>();
@@ -99,7 +109,34 @@ public class Spawner : MonoBehaviour
         note.isLongNote = data.isLongNote;
         note.AR = arValue;
 
-        obj.transform.position = new Vector3(10f, y, 0f);
+        bool isOuter = (lane == 0 || lane == 3);
+
+        Sprite head = isOuter ? outerHead : innerHead;
+        Sprite body = isOuter ? outerBody : innerBody;
+        Sprite tail = isOuter ? outerTail : innerTail;
+
+        var headSr = obj.GetComponent<SpriteRenderer>();
+        if (headSr != null && head != null) headSr.sprite = head;
+
+        var bodyT = obj.transform.Find("Body");
+        if (bodyT != null && body != null)
+        {
+            var bodySr = bodyT.GetComponent<SpriteRenderer>();
+            if (bodySr != null) bodySr.sprite = body;
+        }
+
+        var tailT = obj.transform.Find("Tail");
+        if (tailT != null && tail != null)
+        {
+            var tailSr = tailT.GetComponent<SpriteRenderer>();
+            if (tailSr != null)
+            {
+                tailSr.sprite = tail;
+                tailSr.flipY = true;
+            }
+        }
+
+        obj.transform.position = new Vector3(x, 10f, 0f);
     }
 
     static AudioType GetAudioType(string path)

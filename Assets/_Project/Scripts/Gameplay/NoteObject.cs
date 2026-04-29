@@ -10,19 +10,29 @@ public class NoteObject : MonoBehaviour
     [Header("Type")]
     public bool isLongNote = false;
 
-    [HideInInspector] public bool isBeingHeld = false;
+    [Header("Long Note Body Offsets")]
+    public float bodyTopOffset = 0f;
+    public float bodyBottomOffset = 0f;
 
-    private const float START_X = 10f;
-    private const float TARGET_X = -7f;
+    [HideInInspector] public bool isBeingHeld = false;
+    [HideInInspector] public bool isMissed = false;
+
+    private const float START_Y = 10f;
+    private const float TARGET_Y = -3.5f;
+    private const float DIM = 0.7f;
 
     private float preempt;
     private float window50;
-
-    private bool headMissed = false;
+    private bool headMissRegistered = false;
 
     private Transform bodyTransform;
     private Transform tailTransform;
-    private float bodyNativeWidth = 1f;
+    private float bodyNativeHeight = 1f;
+    private float bodyLocalX = 0f;
+    private float tailLocalX = 0f;
+    private SpriteRenderer headRenderer;
+    private SpriteRenderer bodyRenderer;
+    private SpriteRenderer tailRenderer;
 
     void Start()
     {
@@ -32,17 +42,25 @@ public class NoteObject : MonoBehaviour
         bodyTransform = transform.Find("Body");
         tailTransform = transform.Find("Tail");
 
+        headRenderer = GetComponent<SpriteRenderer>();
+
         if (bodyTransform != null)
         {
-            var sr = bodyTransform.GetComponent<SpriteRenderer>();
+            bodyLocalX = bodyTransform.localPosition.x;
+            bodyRenderer = bodyTransform.GetComponent<SpriteRenderer>();
+            var sr = bodyRenderer;
             if (sr != null && sr.sprite != null)
-                bodyNativeWidth = sr.sprite.bounds.size.x;
+                bodyNativeHeight = sr.sprite.bounds.size.y;
 
             bodyTransform.gameObject.SetActive(isLongNote);
         }
 
         if (tailTransform != null)
+        {
+            tailLocalX = tailTransform.localPosition.x;
+            tailRenderer = tailTransform.GetComponent<SpriteRenderer>();
             tailTransform.gameObject.SetActive(isLongNote);
+        }
     }
 
     void Update()
@@ -54,11 +72,12 @@ public class NoteObject : MonoBehaviour
         if (isLongNote)
         {
             UpdateBody(songPos);
-            CheckTailAutoMiss(songPos);
+            if (!isMissed) CheckLNHeadAutoMiss(songPos);
+            if (!isMissed) CheckTailAutoMiss(songPos);
         }
         else
         {
-            CheckHeadAutoMiss(songPos);
+            if (!isMissed) CheckHeadAutoMiss(songPos);
         }
     }
 
@@ -66,26 +85,44 @@ public class NoteObject : MonoBehaviour
     {
         if (isBeingHeld)
         {
-
-            transform.position = new Vector3(TARGET_X, transform.position.y, 0f);
+            transform.position = new Vector3(transform.position.x, TARGET_Y, 0f);
             return;
         }
 
         float progress = GetProgress(beatTime, songPos);
-        float x = Mathf.Lerp(START_X, TARGET_X, progress);
-        transform.position = new Vector3(x, transform.position.y, 0f);
+        float y = Mathf.LerpUnclamped(START_Y, TARGET_Y, progress);
+        transform.position = new Vector3(transform.position.x, y, 0f);
 
-        if (!isLongNote && progress > 1.5f)
+        if (progress > 1.5f)
             Destroy(gameObject);
     }
 
     void CheckHeadAutoMiss(float songPos)
     {
-        if (!headMissed && songPos > beatTime + window50)
+        if (songPos > beatTime + window50)
         {
-            headMissed = true;
             ScoreManager.instance.RegisterHit(Judgement.Miss);
-            Destroy(gameObject);
+            isMissed = true;
+        }
+    }
+
+    void CheckLNHeadAutoMiss(float songPos)
+    {
+        if (!headMissRegistered && !isBeingHeld && songPos > beatTime + window50)
+        {
+            headMissRegistered = true;
+            ScoreManager.instance.RegisterHit(Judgement.Miss);
+            SetMissed();
+        }
+    }
+
+    void CheckTailAutoMiss(float songPos)
+    {
+        if (isBeingHeld && songPos > endTime + window50)
+        {
+            ScoreManager.instance.RegisterHit(Judgement.Miss);
+            SetMissed();
+            isBeingHeld = false;
         }
     }
 
@@ -93,31 +130,33 @@ public class NoteObject : MonoBehaviour
     {
         if (bodyTransform == null) return;
 
-        float headX = transform.position.x;
-        float tailX = Mathf.Lerp(START_X, TARGET_X, GetProgress(endTime, songPos));
+        float headY = transform.position.y;
+        float tailY = Mathf.LerpUnclamped(START_Y, TARGET_Y, GetProgress(endTime, songPos));
 
-        float bodyLength = tailX - headX;
+        float headHalfHeight = headRenderer != null ? headRenderer.bounds.extents.y : 0f;
+        float tailHalfHeight = tailRenderer != null ? tailRenderer.bounds.extents.y : 0f;
 
-        if (bodyTransform != null)
+        float bodyStart = headY + headHalfHeight + bodyTopOffset;
+        float bodyEnd = tailY - tailHalfHeight - bodyBottomOffset;
+        float bodyLength = bodyEnd - bodyStart;
+
+        if (bodyLength > 0f)
         {
-            if (bodyLength > 0f)
-            {
-                bodyTransform.gameObject.SetActive(true);
-                bodyTransform.position = new Vector3(headX + bodyLength * 0.5f, transform.position.y, 0f);
-                bodyTransform.localScale = new Vector3(bodyLength / bodyNativeWidth, bodyTransform.localScale.y, 1f);
-            }
-            else
-            {
-                bodyTransform.gameObject.SetActive(false);
-            }
+            bodyTransform.gameObject.SetActive(true);
+            bodyTransform.localPosition = new Vector3(bodyLocalX, (bodyStart + bodyLength * 0.5f) - headY, 0f);
+            bodyTransform.localScale = new Vector3(bodyTransform.localScale.x, bodyLength / bodyNativeHeight, 1f);
+        }
+        else
+        {
+            bodyTransform.gameObject.SetActive(false);
         }
 
         if (tailTransform != null)
         {
-            if (bodyLength > 0f)
+            if (bodyEnd > headY)
             {
                 tailTransform.gameObject.SetActive(true);
-                tailTransform.position = new Vector3(tailX, transform.position.y, 0f);
+                tailTransform.localPosition = new Vector3(tailLocalX, tailY - headY, 0f);
             }
             else
             {
@@ -126,14 +165,13 @@ public class NoteObject : MonoBehaviour
         }
     }
 
-    void CheckTailAutoMiss(float songPos)
+    public void SetMissed()
     {
-
-        if (songPos > endTime + window50)
-        {
-            ScoreManager.instance.RegisterHit(Judgement.Miss);
-            Destroy(gameObject);
-        }
+        isMissed = true;
+        Color dim = new Color(DIM, DIM, DIM, 1f);
+        if (headRenderer != null) headRenderer.color = dim;
+        if (bodyRenderer != null) bodyRenderer.color = dim;
+        if (tailRenderer != null) tailRenderer.color = dim;
     }
 
     public Judgement GetTailJudgement(float songPos, float w300, float w100, float w50)
