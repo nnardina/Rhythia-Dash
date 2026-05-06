@@ -20,9 +20,9 @@ public class HitDetector : MonoBehaviour
 
     void Start()
     {
-        window300 = (80f - 6f * OD) / 1000f;
-        window100 = (140f - 8f * OD) / 1000f;
-        window50 = (200f - 10f * OD) / 1000f;
+        window300 = (200f - 20f * OD) / 1000f;
+        window100 = (100f - 17f * OD) / 1000f;
+        window50 = (200f - 13f * OD) / 1000f;
 
         if (idleRenderer != null) idleRenderer.enabled = true;
         if (pressedRenderer != null) pressedRenderer.enabled = false;
@@ -44,7 +44,7 @@ public class HitDetector : MonoBehaviour
 
         float delta = Conductor.instance.songPosition - closest.beatTime;
         float absDelta = Mathf.Abs(delta);
-        float windowMiss = NoteObject.ARToPreempt(closest.AR);
+        float windowMiss = (200f - 10f * OD) / 1000f;
 
         if (absDelta > windowMiss) return;
 
