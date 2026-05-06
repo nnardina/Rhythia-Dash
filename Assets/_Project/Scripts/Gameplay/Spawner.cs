@@ -21,14 +21,14 @@ public class Spawner : MonoBehaviour
     public Sprite innerTail;
 
     [Header("Map")]
-    [Tooltip("Имя файла .osu в папке StreamingAssets (например: map.osu)")]
+    [Tooltip("пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ .osu пїЅ пїЅпїЅпїЅпїЅпїЅ StreamingAssets (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: map.osu)")]
     public string osuFileName = "map.osu";
 
     [Header("Lanes")]
     public float[] laneXPositions = { -7f, -5f, -3f, -1f };
 
     [Header("Debug")]
-    [Tooltip("0 = брать из карты, иначе переопределить")]
+    [Tooltip("0 = пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ")]
     public float arOverride = 0f;
 
     private List<NoteData> notes = new List<NoteData>();
@@ -40,18 +40,37 @@ public class Spawner : MonoBehaviour
 
     void Start()
     {
+        string selectedFile = PlayerPrefs.GetString("SelectedOsuFile", "");
+
+        if (!string.IsNullOrEmpty(selectedFile))
+        {
+            osuFileName = selectedFile;
+        }
+        else
+        {
+
+            Debug.Log("Р¤Р°Р№Р» РїСѓСЃС‚");
+        }
+
         string osuPath = Path.Combine(Application.streamingAssetsPath, osuFileName);
+
+        if (!File.Exists(osuPath))
+        {
+            Debug.LogError($"[Spawner] .osu С„Р°Р№Р» РЅРµ РЅР°Р№РґРµРЅ: {osuPath}");
+            return;
+        }
 
         beatmap = OsuParser.Parse(osuPath);
 
         if (beatmap.columnCount != 4)
         {
-            Debug.LogError($"[Spawner] Карта должна быть 4K, но найдено {beatmap.columnCount}K. Загрузка отменена.");
+            Debug.LogError(
+                $"[Spawner] РљР°СЂС‚Р° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ 4K, РЅР°Р№РґРµРЅРѕ {beatmap.columnCount}K");
             return;
         }
 
         notes = beatmap.notes;
-        arValue = arOverride > 0f ? arOverride : (beatmap.approachRate > 0 ? beatmap.approachRate : 8f);
+        arValue = beatmap.approachRate > 0 ? beatmap.approachRate : 8f;
         preempt = NoteObject.ARToPreempt(arValue);
 
         string audioPath = Path.Combine(
@@ -65,7 +84,7 @@ public class Spawner : MonoBehaviour
     {
         if (!File.Exists(audioPath))
         {
-            Debug.LogError($"[Spawner] Аудио не найдено: {audioPath}");
+            Debug.LogError($"[Spawner] пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ: {audioPath}");
             yield break;
         }
 
@@ -78,7 +97,7 @@ public class Spawner : MonoBehaviour
 
             if (req.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"[Spawner] Ошибка загрузки аудио: {req.error}");
+                Debug.LogError($"[Spawner] пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ: {req.error}");
                 yield break;
             }
 
