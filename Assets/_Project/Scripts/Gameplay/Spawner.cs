@@ -25,7 +25,11 @@ public class Spawner : MonoBehaviour
     public string osuFileName = "map.osu";
 
     [Header("Lanes")]
-    public float[] laneXPositions = { -3f, -1f, 1f, 3f };
+    public float[] laneXPositions = { -7f, -5f, -3f, -1f };
+
+    [Header("Debug")]
+    [Tooltip("0 = брать из карты, иначе переопределить")]
+    public float arOverride = 0f;
 
     private List<NoteData> notes = new List<NoteData>();
     private int nextIndex = 0;
@@ -47,7 +51,7 @@ public class Spawner : MonoBehaviour
         }
 
         notes = beatmap.notes;
-        arValue = beatmap.approachRate > 0 ? beatmap.approachRate : 8f;
+        arValue = arOverride > 0f ? arOverride : (beatmap.approachRate > 0 ? beatmap.approachRate : 8f);
         preempt = NoteObject.ARToPreempt(arValue);
 
         string audioPath = Path.Combine(
@@ -108,6 +112,7 @@ public class Spawner : MonoBehaviour
         note.endTime = data.endTimeSeconds;
         note.isLongNote = data.isLongNote;
         note.AR = arValue;
+        note.OD = beatmap.overallDifficulty;
 
         bool isOuter = (lane == 0 || lane == 3);
 

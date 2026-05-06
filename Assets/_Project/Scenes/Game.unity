@@ -150,7 +150,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitDetector
   laneKey: 115
-  laneX: -1
+  laneX: -5
   OD: 8
   idleRenderer: {fileID: 365405907}
   pressedRenderer: {fileID: 483472728}
@@ -222,8 +222,8 @@ Transform:
   m_GameObject: {fileID: 365405905}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1, y: -3.5, z: 0}
-  m_LocalScale: {x: 1.57, y: 1.57, z: 1}
+  m_LocalPosition: {x: -5, y: -3.5, z: 0}
+  m_LocalScale: {x: 2.2, y: 2.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 483472729}
@@ -479,7 +479,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 3dce2c6b37526a049a6dfeeca17c1f8d, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.21176471}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -731,8 +731,8 @@ Transform:
   m_GameObject: {fileID: 843299831}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3, y: -3.5, z: 0}
-  m_LocalScale: {x: 1.57, y: 1.57, z: 1}
+  m_LocalPosition: {x: -7, y: -3.5, z: 0}
+  m_LocalScale: {x: 2.2, y: 2.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 943174461}
@@ -751,7 +751,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitDetector
   laneKey: 97
-  laneX: -3
+  laneX: -7
   OD: 8
   idleRenderer: {fileID: 843299832}
   pressedRenderer: {fileID: 943174460}
@@ -840,8 +840,8 @@ Transform:
   m_GameObject: {fileID: 909982639}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 1, y: 3, z: 0}
-  m_LocalScale: {x: 10, y: 1, z: 1}
+  m_LocalPosition: {x: -3, y: 3, z: 0}
+  m_LocalScale: {x: 10, y: 1.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -974,12 +974,13 @@ MonoBehaviour:
   innerHead: {fileID: 6783224005027674683, guid: b41bb06907f2adf46b9c5acfe2074bed, type: 3}
   innerBody: {fileID: 21300000, guid: ef5e55dc545dbc44b86279a15cdb4710, type: 3}
   innerTail: {fileID: -9132891321614634637, guid: a2656965756c9b84481eab0eb130ca90, type: 3}
-  osuFileName: xi - FREEDOM DiVE (razlteh) [4K Normal].osu
+  osuFileName: Apollo - Brazil (Lumpita) [Snowy's Beginner].osu
   laneXPositions:
+  - -7
+  - -5
   - -3
   - -1
-  - 1
-  - 3
+  arOverride: 5
 --- !u!4 &1174437660
 Transform:
   m_ObjectHideFlags: 0
@@ -1080,8 +1081,8 @@ Transform:
   m_GameObject: {fileID: 1476210089}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 3, y: 3, z: 0}
-  m_LocalScale: {x: 10, y: 1, z: 1}
+  m_LocalPosition: {x: -1, y: 3, z: 0}
+  m_LocalScale: {x: 10, y: 1.43, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1117,7 +1118,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitDetector
   laneKey: 102
-  laneX: 3
+  laneX: -1
   OD: 8
   idleRenderer: {fileID: 1478460824}
   pressedRenderer: {fileID: 1575657121}
@@ -1189,8 +1190,8 @@ Transform:
   m_GameObject: {fileID: 1478460822}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3, y: -3.5, z: 0}
-  m_LocalScale: {x: 1.57, y: 1.57, z: 1}
+  m_LocalPosition: {x: -1, y: -3.5, z: 0}
+  m_LocalScale: {x: 2.2, y: 2.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1575657122}
@@ -1516,8 +1517,8 @@ Transform:
   m_GameObject: {fileID: 1764896141}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: -1, y: 3, z: 0}
-  m_LocalScale: {x: 10, y: 1, z: 1}
+  m_LocalPosition: {x: -5, y: 3, z: 0}
+  m_LocalScale: {x: 10, y: 1.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1607,8 +1608,8 @@ Transform:
   m_GameObject: {fileID: 1777135518}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: -3, y: 3, z: 0}
-  m_LocalScale: {x: 10, y: 1, z: 1}
+  m_LocalPosition: {x: -7, y: 3, z: 0}
+  m_LocalScale: {x: 10, y: 1.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1644,7 +1645,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitDetector
   laneKey: 100
-  laneX: 1
+  laneX: -3
   OD: 8
   idleRenderer: {fileID: 1797388345}
   pressedRenderer: {fileID: 835761737}
@@ -1716,8 +1717,8 @@ Transform:
   m_GameObject: {fileID: 1797388343}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1, y: -3.5, z: 0}
-  m_LocalScale: {x: 1.57, y: 1.57, z: 1}
+  m_LocalPosition: {x: -3, y: -3.5, z: 0}
+  m_LocalScale: {x: 2.2, y: 2.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 835761738}

@@ -84,8 +84,8 @@ public class HitDetector : MonoBehaviour
         if (tailJudgement == Judgement.Miss)
         {
             ScoreManager.instance.RegisterHit(Judgement.Miss);
-            heldNote.isBeingHeld = false;
             heldNote.SetMissed();
+            heldNote.isBeingHeld = false;
         }
         else
         {
@@ -108,7 +108,7 @@ public class HitDetector : MonoBehaviour
         NoteObject closest = null;
         float minDelta = float.MaxValue;
 
-        foreach (var note in FindObjectsByType<NoteObject>())
+        foreach (var note in NoteObject.All)
         {
             if (note.isBeingHeld) continue;
             if (note.isMissed) continue;

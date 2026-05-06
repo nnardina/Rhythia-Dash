@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class NoteObject : MonoBehaviour
 {
@@ -6,6 +7,7 @@ public class NoteObject : MonoBehaviour
     public float beatTime;
     public float endTime;
     public float AR = 8f;
+    public float OD = 8f;
 
     [Header("Type")]
     public bool isLongNote = false;
@@ -17,13 +19,25 @@ public class NoteObject : MonoBehaviour
     [HideInInspector] public bool isBeingHeld = false;
     [HideInInspector] public bool isMissed = false;
 
+    public static readonly HashSet<NoteObject> All = new HashSet<NoteObject>();
+
+    void OnEnable() => All.Add(this);
+    void OnDisable() => All.Remove(this);
+
     private const float START_Y = 10f;
     private const float TARGET_Y = -3.5f;
     private const float DIM = 0.7f;
+    private const float DESTROY_Y = -15f;
 
     private float preempt;
     private float window50;
+    private float speed;
+
     private bool headMissRegistered = false;
+
+    private float missedHeadY = 0f;
+    private float missedTailY = 0f;
+    private float missedSongPos = 0f;
 
     private Transform bodyTransform;
     private Transform tailTransform;
@@ -37,21 +51,19 @@ public class NoteObject : MonoBehaviour
     void Start()
     {
         preempt = ARToPreempt(AR);
-        window50 = (200f - 10f * 8f) / 1000f;
+        window50 = (200f - 10f * OD) / 1000f;
+        speed = (START_Y - TARGET_Y) / preempt;
 
         bodyTransform = transform.Find("Body");
         tailTransform = transform.Find("Tail");
-
         headRenderer = GetComponent<SpriteRenderer>();
 
         if (bodyTransform != null)
         {
             bodyLocalX = bodyTransform.localPosition.x;
             bodyRenderer = bodyTransform.GetComponent<SpriteRenderer>();
-            var sr = bodyRenderer;
-            if (sr != null && sr.sprite != null)
-                bodyNativeHeight = sr.sprite.bounds.size.y;
-
+            if (bodyRenderer != null && bodyRenderer.sprite != null)
+                bodyNativeHeight = bodyRenderer.sprite.bounds.size.y;
             bodyTransform.gameObject.SetActive(isLongNote);
         }
 
@@ -67,34 +79,50 @@ public class NoteObject : MonoBehaviour
     {
         float songPos = Conductor.instance.songPosition;
 
-        UpdateHeadPosition(songPos);
-
-        if (isLongNote)
+        if (!isLongNote)
         {
-            UpdateBody(songPos);
-            if (!isMissed) CheckLNHeadAutoMiss(songPos);
-            if (!isMissed) CheckTailAutoMiss(songPos);
-        }
-        else
-        {
+            UpdateRegularNote(songPos);
             if (!isMissed) CheckHeadAutoMiss(songPos);
-        }
-    }
-
-    void UpdateHeadPosition(float songPos)
-    {
-        if (isBeingHeld)
-        {
-            transform.position = new Vector3(transform.position.x, TARGET_Y, 0f);
             return;
         }
 
-        float progress = GetProgress(beatTime, songPos);
-        float y = Mathf.LerpUnclamped(START_Y, TARGET_Y, progress);
-        transform.position = new Vector3(transform.position.x, y, 0f);
+        float headY = CalcHeadY(songPos);
+        float tailY = CalcTailY(songPos);
 
-        if (progress > 1.5f)
-            Destroy(gameObject);
+        transform.position = new Vector3(transform.position.x, headY, 0f);
+
+        UpdateBody(headY, tailY);
+
+        if (!isMissed)
+        {
+            CheckLNHeadAutoMiss(songPos);
+            CheckTailAutoMiss(songPos);
+        }
+
+        if (tailY < DESTROY_Y) Destroy(gameObject);
+    }
+
+    float CalcHeadY(float songPos)
+    {
+        if (isBeingHeld) return TARGET_Y;
+
+        if (isMissed) return missedHeadY - speed * (songPos - missedSongPos);
+
+        return TARGET_Y + (beatTime - songPos) * speed;
+    }
+
+    float CalcTailY(float songPos)
+    {
+        if (isMissed) return missedTailY - speed * (songPos - missedSongPos);
+
+        return TARGET_Y + (endTime - songPos) * speed;
+    }
+
+    void UpdateRegularNote(float songPos)
+    {
+        float y = TARGET_Y + (beatTime - songPos) * speed;
+        transform.position = new Vector3(transform.position.x, y, 0f);
+        if (y < DESTROY_Y) Destroy(gameObject);
     }
 
     void CheckHeadAutoMiss(float songPos)
@@ -126,18 +154,17 @@ public class NoteObject : MonoBehaviour
         }
     }
 
-    void UpdateBody(float songPos)
+    void UpdateBody(float headY, float tailY)
     {
         if (bodyTransform == null) return;
 
-        float headY = transform.position.y;
-        float tailY = Mathf.LerpUnclamped(START_Y, TARGET_Y, GetProgress(endTime, songPos));
+        float displayTailY = Mathf.Min(tailY, START_Y);
 
-        float headHalfHeight = headRenderer != null ? headRenderer.bounds.extents.y : 0f;
-        float tailHalfHeight = tailRenderer != null ? tailRenderer.bounds.extents.y : 0f;
+        float headHalf = headRenderer != null ? headRenderer.bounds.extents.y : 0f;
+        float tailHalf = (tailY < START_Y && tailRenderer != null) ? tailRenderer.bounds.extents.y : 0f;
 
-        float bodyStart = headY + headHalfHeight + bodyTopOffset;
-        float bodyEnd = tailY - tailHalfHeight - bodyBottomOffset;
+        float bodyStart = headY + headHalf + bodyTopOffset;
+        float bodyEnd = displayTailY - tailHalf - bodyBottomOffset;
         float bodyLength = bodyEnd - bodyStart;
 
         if (bodyLength > 0f)
@@ -153,21 +180,27 @@ public class NoteObject : MonoBehaviour
 
         if (tailTransform != null)
         {
-            if (bodyEnd > headY)
-            {
-                tailTransform.gameObject.SetActive(true);
+            bool tailOnScreen = tailY < START_Y && bodyEnd > headY;
+            tailTransform.gameObject.SetActive(tailOnScreen);
+            if (tailOnScreen)
                 tailTransform.localPosition = new Vector3(tailLocalX, tailY - headY, 0f);
-            }
-            else
-            {
-                tailTransform.gameObject.SetActive(false);
-            }
         }
     }
 
     public void SetMissed()
     {
+        float songPos = Conductor.instance.songPosition;
+
+        float currentHeadY = isBeingHeld
+            ? TARGET_Y
+            : TARGET_Y + (beatTime - songPos) * speed;
+        float currentTailY = TARGET_Y + (endTime - songPos) * speed;
+
         isMissed = true;
+        missedSongPos = songPos;
+        missedHeadY = currentHeadY;
+        missedTailY = currentTailY;
+
         Color dim = new Color(DIM, DIM, DIM, 1f);
         if (headRenderer != null) headRenderer.color = dim;
         if (bodyRenderer != null) bodyRenderer.color = dim;
@@ -188,11 +221,5 @@ public class NoteObject : MonoBehaviour
         if (ar < 5f) return (1200f + 120f * (5f - ar)) / 1000f;
         if (ar > 5f) return (1200f - 150f * (ar - 5f)) / 1000f;
         return 1200f / 1000f;
-    }
-
-    float GetProgress(float targetBeatTime, float songPos)
-    {
-        float spawnTime = targetBeatTime - preempt;
-        return (songPos - spawnTime) / preempt;
     }
 }
