@@ -1,0 +1,58 @@
+osu file format v14
+
+[General]
+AudioFilename: 09 - CYasdBER INDUCTION - SHARPNEL SOUNDS_0.9.mp3
+AudioLeadIn: 0
+PreviewTime: 170850
+Countdown: 0
+SampleSet: None
+StackLeniency: 0.7
+Mode: 3
+LetterboxInBreaks: 0
+SpecialStyle: 0
+WidescreenStoryboard: 1
+
+[Editor]
+Bookmarks: 194556,228064,250402,261572,272741,295080,317418
+DistanceSpacing: 0.8
+BeatDivisor: 4
+GridSize: 32
+TimelineZoom: 2
+
+[Metadata]
+Title:Stream Challenge #4
+TitleUnicode:Stream Challenge #4
+Artist:4k
+ArtistUnicode:4k
+Creator:Harpy-
+Version:(Marathon)
+Source:
+Tags:
+BeatmapID:1692515
+BeatmapSetID:806157
+
+[Difficulty]
+HPDrainRate:8
+CircleSize:4
+OverallDifficulty:8
+ApproachRate:5
+SliderMultiplier:1.4
+SliderTickRate:1
+
+[Events]
+//Background and Video events
+0,0,"Bgsd-Cyber.png",0,0
+//Break Periods
+//Storyboard Layer 0 (Background)
+//Storyboard Layer 1 (Fail)
+//Storyboard Layer 2 (Pass)
+//Storyboard Layer 3 (Foreground)
+//Storyboard Sound Samples
+
+[TimingPoints]
+1886,349.040139616056,4,1,0,20,1,0
+
+
+[HitObjects]
+320,192,489,5,0,0:0:0:0:
+448,192,20559,1,0,0:0:0:0:
