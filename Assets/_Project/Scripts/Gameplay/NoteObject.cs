@@ -161,10 +161,10 @@ public class NoteObject : MonoBehaviour
         float displayTailY = Mathf.Min(tailY, START_Y);
 
         float headHalf = headRenderer != null ? headRenderer.bounds.extents.y : 0f;
-        float tailHalf = (tailY < START_Y && tailRenderer != null) ? tailRenderer.bounds.extents.y : 0f;
+        float tailHalf = (displayTailY < START_Y && tailRenderer != null) ? tailRenderer.bounds.extents.y : 0f;
 
         float bodyStart = headY + headHalf + bodyTopOffset;
-        float bodyEnd = displayTailY - tailHalf - bodyBottomOffset;
+        float bodyEnd = displayTailY - tailHalf + Mathf.Abs(bodyBottomOffset);
         float bodyLength = bodyEnd - bodyStart;
 
         if (bodyLength > 0f)
@@ -180,10 +180,10 @@ public class NoteObject : MonoBehaviour
 
         if (tailTransform != null)
         {
-            bool tailOnScreen = tailY < START_Y && bodyEnd > headY;
+            bool tailOnScreen = displayTailY < START_Y && bodyEnd > headY;
             tailTransform.gameObject.SetActive(tailOnScreen);
             if (tailOnScreen)
-                tailTransform.localPosition = new Vector3(tailLocalX, tailY - headY, 0f);
+                tailTransform.localPosition = new Vector3(tailLocalX, displayTailY - headY, 0f);
         }
     }
 
