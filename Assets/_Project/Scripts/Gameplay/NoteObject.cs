@@ -12,10 +12,6 @@ public class NoteObject : MonoBehaviour
     [Header("Type")]
     public bool isLongNote = false;
 
-    [Header("Long Note Body Offsets")]
-    public float bodyTopOffset = 0f;
-    public float bodyBottomOffset = 0f;
-
     [HideInInspector] public bool isBeingHeld = false;
     [HideInInspector] public bool isMissed = false;
 
@@ -51,7 +47,7 @@ public class NoteObject : MonoBehaviour
     void Start()
     {
         preempt = ARToPreempt(AR);
-        window50 = (200f - 10f * OD) / 1000f;
+        window50 = (300f - 10f * OD) / 1000f;
         speed = (START_Y - TARGET_Y) / preempt;
 
         bodyTransform = transform.Find("Body");
@@ -63,7 +59,11 @@ public class NoteObject : MonoBehaviour
             bodyLocalX = bodyTransform.localPosition.x;
             bodyRenderer = bodyTransform.GetComponent<SpriteRenderer>();
             if (bodyRenderer != null && bodyRenderer.sprite != null)
-                bodyNativeHeight = bodyRenderer.sprite.bounds.size.y;
+            {
+                float spriteHeight = bodyRenderer.sprite.bounds.size.y;
+                float bodyScale = bodyTransform.localScale.y;
+                bodyNativeHeight = spriteHeight / bodyScale;
+            }
             bodyTransform.gameObject.SetActive(isLongNote);
         }
 
@@ -158,20 +158,13 @@ public class NoteObject : MonoBehaviour
     {
         if (bodyTransform == null) return;
 
-        float displayTailY = Mathf.Min(tailY, START_Y);
+        float totalDistance = (tailY - headY) / 3.14f;
 
-        float headHalf = headRenderer != null ? headRenderer.bounds.extents.y : 0f;
-        float tailHalf = (tailY < START_Y && tailRenderer != null) ? tailRenderer.bounds.extents.y : 0f;
-
-        float bodyStart = headY + headHalf + bodyTopOffset;
-        float bodyEnd = displayTailY - tailHalf - bodyBottomOffset;
-        float bodyLength = bodyEnd - bodyStart;
-
-        if (bodyLength > 0f)
+        if (totalDistance > 0f)
         {
             bodyTransform.gameObject.SetActive(true);
-            bodyTransform.localPosition = new Vector3(bodyLocalX, (bodyStart + bodyLength * 0.5f) - headY, 0f);
-            bodyTransform.localScale = new Vector3(bodyTransform.localScale.x, bodyLength / bodyNativeHeight, 1f);
+            bodyTransform.localPosition = new Vector3(bodyLocalX, totalDistance * 0.5f, 0f);
+            bodyTransform.localScale = new Vector3(bodyTransform.localScale.x, totalDistance / bodyNativeHeight, 1f);
         }
         else
         {
@@ -180,10 +173,10 @@ public class NoteObject : MonoBehaviour
 
         if (tailTransform != null)
         {
-            bool tailOnScreen = tailY < START_Y && bodyEnd > headY;
-            tailTransform.gameObject.SetActive(tailOnScreen);
-            if (tailOnScreen)
-                tailTransform.localPosition = new Vector3(tailLocalX, tailY - headY, 0f);
+            bool tailVisible = totalDistance > 0f;
+            tailTransform.gameObject.SetActive(tailVisible);
+            if (tailVisible)
+                tailTransform.localPosition = new Vector3(tailLocalX, totalDistance, 0f);
         }
     }
 

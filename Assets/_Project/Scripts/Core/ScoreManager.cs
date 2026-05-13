@@ -49,6 +49,13 @@ public class ScoreManager : MonoBehaviour
         }
 
         if (combo > maxCombo) maxCombo = combo;
+
+        if (HitFeedback.instance != null)
+        {
+            HitFeedback.instance.ShowJudgment(judgement);
+            HitFeedback.instance.UpdateCombo(combo);
+        }
+
         Debug.Log($"[{judgement}] Score: {score} | Combo: {combo}x | Accuracy: {GetAccuracy():F2}%");
     }
 

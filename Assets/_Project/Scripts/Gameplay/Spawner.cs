@@ -9,6 +9,10 @@ public class Spawner : MonoBehaviour
     [Header("References")]
     public GameObject notePrefab;
     public Conductor conductor;
+    public CountdownManager countdownManager;
+
+    [Header("Countdown")]
+    public float countdownDuration = 2f;
 
     [Header("Sprites Outer (lanes 1 & 4)")]
     public Sprite outerHead;
@@ -73,6 +77,12 @@ public class Spawner : MonoBehaviour
         arValue = beatmap.approachRate > 0 ? beatmap.approachRate : 8f;
         preempt = NoteObject.ARToPreempt(arValue);
 
+        HitDetector[] detectors = FindObjectsOfType<HitDetector>();
+        foreach (var detector in detectors)
+        {
+            detector.OD = beatmap.overallDifficulty;
+        }
+
         string audioPath = Path.Combine(
             Path.GetDirectoryName(osuPath),
             beatmap.audioFilename);
@@ -102,8 +112,17 @@ public class Spawner : MonoBehaviour
             }
 
             AudioClip clip = DownloadHandlerAudioClip.GetContent(req);
-            conductor.SetClipAndPlay(clip, beatmap.bpm, beatmap.firstBeatOffset);
+
+            conductor.StartWithCountdown(preempt);
             ready = true;
+
+            if (countdownManager != null)
+            {
+                StartCoroutine(countdownManager.StartCountdown(arValue));
+                yield return new WaitUntil(() => countdownManager.IsCountdownFinished());
+            }
+
+            conductor.SetClipAndPlay(clip, beatmap.bpm, beatmap.firstBeatOffset);
         }
     }
 

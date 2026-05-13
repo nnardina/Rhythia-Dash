@@ -12,6 +12,8 @@ public class Conductor : MonoBehaviour
     private float       dspSongTime;
     private float       firstBeatOffset;
     private float       secPerBeat;
+    private float       startOffset;
+    private bool        isRunning = false;
 
     void Awake()
     {
@@ -21,21 +23,27 @@ public class Conductor : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
     }
 
+    public void StartWithCountdown(float countdownTime)
+    {
+        startOffset = -countdownTime;
+        dspSongTime = (float)AudioSettings.dspTime;
+        isRunning = true;
+    }
+
     public void SetClipAndPlay(AudioClip clip, float bpm, float firstBeatOffset)
     {
         this.firstBeatOffset = firstBeatOffset;
         this.secPerBeat      = 60f / bpm;
 
         audioSource.clip = clip;
-        dspSongTime      = (float)AudioSettings.dspTime;
         audioSource.Play();
     }
 
     void Update()
     {
-        if (!audioSource.isPlaying) return;
+        if (!isRunning) return;
 
-        songPosition        = (float)(AudioSettings.dspTime - dspSongTime);
+        songPosition = (float)(AudioSettings.dspTime - dspSongTime) + startOffset;
         songPositionInBeats = (songPosition - firstBeatOffset) / secPerBeat;
     }
 }
