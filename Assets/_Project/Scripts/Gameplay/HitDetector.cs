@@ -59,6 +59,7 @@ public class HitDetector : MonoBehaviour
 
         Judgement headJudgement = GetJudgement(absDelta);
         ScoreManager.instance.RegisterHit(headJudgement);
+        BossHealthBar.Instance?.RegisterJudgement(headJudgement);
 
         if (closest.isLongNote)
         {
@@ -90,6 +91,7 @@ public class HitDetector : MonoBehaviour
         else
         {
             ScoreManager.instance.RegisterHit(tailJudgement);
+            BossHealthBar.Instance?.RegisterJudgement(tailJudgement);
             Destroy(heldNote.gameObject);
         }
 
