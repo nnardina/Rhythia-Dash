@@ -6,10 +6,10 @@ public class BossHealthBar : MonoBehaviour
 {
     public static BossHealthBar Instance { get; private set; }
 
-    [Header("Сегменты (0 = правый/последний, 4 = левый/первый)")]
+    [Header("Сегменты")]
     public BossHexSegment[] segments = new BossHexSegment[5];
 
-    [Header("Крестики (по одному на каждый сегмент)")]
+    [Header("Крестики")]
     public GameObject[] crosses = new GameObject[5];
 
     [Header("HP")]
@@ -18,18 +18,21 @@ public class BossHealthBar : MonoBehaviour
     public float damagePerHit100 = 1.2f;
     public float damagePerHit50 = 0.5f;
 
+    [Header("Множитель HP от числа нот")]
+    public float hpPerNote = 1.0f;
+
     [Header("Panels")]
     public GameObject normalPanel;
     public GameObject deathPanel;
 
     [Header("Boss Image (UI)")]
-    public Image bossImage; 
+    public Image bossImage;
 
     [Header("Boss Damage Animation")]
-    public float shakeStrength = 15f; 
+    public float shakeStrength = 15f;
     public float shakeDuration = 0.3f;
     public float flashDuration = 0.15f;
-    public Color flashColor = new Color(1f, 0.3f, 0.3f, 1f); 
+    public Color flashColor = new Color(1f, 0.3f, 0.3f, 1f);
 
     private float hp;
     private bool isDead;
@@ -76,6 +79,21 @@ public class BossHealthBar : MonoBehaviour
         if (normalPanel) normalPanel.SetActive(true);
     }
 
+    public void InitFromNoteCount(int totalNotes)
+    {
+        if (totalNotes <= 0) return;
+
+        maxHP = totalNotes * hpPerNote;
+        hp = maxHP;
+
+        damagePerHit300 = maxHP / (totalNotes * 0.20f);
+        damagePerHit100 = maxHP / (totalNotes * 0.40f);
+        damagePerHit50 = maxHP / (totalNotes * 0.60f);
+
+        segmentDead = new bool[segments.Length];
+        RefreshSegments(instant: true);
+    }
+
 
     public void RegisterJudgement(Judgement j)
     {
@@ -112,17 +130,26 @@ public class BossHealthBar : MonoBehaviour
     {
         for (int i = 0; i < segments.Length; i++)
         {
-            if (segmentDead[i]) continue; 
+            if (segmentDead[i]) continue;
 
-            float segMin = i * HpPerSegment;
+            var segMin = i * HpPerSegment;
 
-            if (hp <= segMin)
-            {
-                segmentDead[i] = true;
-                StartCoroutine(ReplaceWithCross(i));
-            }
+            bool isDead;
+            if (i == 4)
+                isDead = hp <= segMin + HpPerSegment * 0.2f;
+            else
+                isDead = hp <= segMin;
+
+            if (!isDead) continue;
+
+            segmentDead[i] = true;
+            StartCoroutine(ReplaceWithCross(i));
+
+            if (DebuffManager.Instance != null)
+                DebuffManager.Instance.OnSegmentDestroyed(i);
         }
     }
+
 
     private IEnumerator ReplaceWithCross(int index)
     {
@@ -143,15 +170,15 @@ public class BossHealthBar : MonoBehaviour
         RectTransform rt = target.GetComponent<RectTransform>();
         if (rt == null) yield break;
 
-        float elapsed = 0f;
-        float duration = 0.2f;
+        var elapsed = 0f;
+        var duration = 0.2f;
         rt.localScale = Vector3.zero;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-            float scale = Mathf.LerpUnclamped(0f, 1f, EaseOutBack(t));
+            var t = elapsed / duration;
+            var scale = Mathf.LerpUnclamped(0f, 1f, EaseOutBack(t));
             rt.localScale = Vector3.one * scale;
             yield return null;
         }
@@ -160,8 +187,8 @@ public class BossHealthBar : MonoBehaviour
 
     private float EaseOutBack(float t)
     {
-        float c1 = 1.70158f;
-        float c3 = c1 + 1f;
+        var c1 = 1.70158f;
+        var c3 = c1 + 1f;
         return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
     }
 
@@ -178,25 +205,25 @@ public class BossHealthBar : MonoBehaviour
         if (bossImage == null) yield break;
 
         RectTransform rt = bossImage.rectTransform;
-        float elapsed = 0f;
-        float shakeDur = shakeDuration;
-        float flashDur = flashDuration;
+        var elapsed = 0f;
+        var shakeDur = shakeDuration;
+        var flashDur = flashDuration;
         bossImage.color = flashColor;
 
         while (elapsed < shakeDur)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / shakeDur;
+            var t = elapsed / shakeDur;
 
-            float strength = Mathf.Lerp(shakeStrength, 0f, t);
-            float offsetX = Random.Range(-strength, strength);
-            float offsetY = Random.Range(-strength * 0.5f, strength * 0.5f);
+            var strength = Mathf.Lerp(shakeStrength, 0f, t);
+            var offsetX = Random.Range(-strength, strength);
+            var offsetY = Random.Range(-strength * 0.5f, strength * 0.5f);
 
             rt.anchoredPosition = bossOriginalPos + new Vector2(offsetX, offsetY);
 
             if (elapsed < flashDur)
             {
-                float flashT = elapsed / flashDur;
+                var flashT = elapsed / flashDur;
                 bossImage.color = Color.Lerp(flashColor,
                     bossOriginalColor, flashT);
             }
@@ -217,8 +244,8 @@ public class BossHealthBar : MonoBehaviour
             if (segments[i] == null) continue;
             if (segmentDead != null && segmentDead[i]) continue;
 
-            float segMin = i * HpPerSegment;
-            float segMax = (i + 1) * HpPerSegment;
+            var segMin = i * HpPerSegment;
+            var segMax = (i + 1) * HpPerSegment;
 
             float fill;
             if (hp >= segMax) fill = 1f;
@@ -255,8 +282,8 @@ public class BossHealthBar : MonoBehaviour
     {
         if (bossImage == null) yield break;
 
-        float elapsed = 0f;
-        float duration = 1.0f;
+        var elapsed = 0f;
+        var duration = 1.0f;
 
         RectTransform rt = bossImage.rectTransform;
         Vector2 startPos = rt.anchoredPosition;
@@ -285,7 +312,7 @@ public class BossHealthBar : MonoBehaviour
         if (cg == null) cg = target.AddComponent<CanvasGroup>();
         cg.alpha = 0f;
 
-        float elapsed = 0f;
+        var elapsed = 0f;
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;

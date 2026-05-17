@@ -42,6 +42,14 @@ public class Spawner : MonoBehaviour
     private bool ready = false;
     private OsuBeatmap beatmap;
 
+    public static Spawner instance;
+
+    private void Awake()
+    {
+        if (instance == null) instance = this;
+        else Destroy(gameObject);
+    }
+
     void Start()
     {
         string selectedFile = PlayerPrefs.GetString("SelectedOsuFile", "");
@@ -113,14 +121,17 @@ public class Spawner : MonoBehaviour
 
             AudioClip clip = DownloadHandlerAudioClip.GetContent(req);
 
+            if (BossHealthBar.Instance != null)
+                BossHealthBar.Instance.InitFromNoteCount(notes.Count);
+
             conductor.StartWithCountdown(preempt);
-            ready = true;
 
             if (countdownManager != null)
             {
                 StartCoroutine(countdownManager.StartCountdown(arValue));
                 yield return new WaitUntil(() => countdownManager.IsCountdownFinished());
             }
+            ready = true;
 
             conductor.SetClipAndPlay(clip, beatmap.bpm, beatmap.firstBeatOffset);
         }
@@ -192,5 +203,10 @@ public class Spawner : MonoBehaviour
             ".wav" => AudioType.WAV,
             _ => AudioType.UNKNOWN
         };
+    }
+
+    public bool AllNotesSpawned()
+    {
+        return ready && nextIndex >= notes.Count;
     }
 }
