@@ -93,7 +93,7 @@ public class BossHexSegment : MonoBehaviour
     {
         while (isPulsing)
         {
-            float t = Mathf.PingPong(Time.time * 3f, 1f);
+            var t = Mathf.PingPong(Time.time * 3f, 1f);
             if (hexFill && !flashActive)
                 hexFill.color = Color.Lerp(activeColor, criticalColor, t);
             yield return null;

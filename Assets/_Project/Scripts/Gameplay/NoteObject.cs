@@ -83,24 +83,27 @@ public class NoteObject : MonoBehaviour
         {
             UpdateRegularNote(songPos);
             if (!isMissed) CheckHeadAutoMiss(songPos);
-            return;
         }
-
-        float headY = CalcHeadY(songPos);
-        float tailY = CalcTailY(songPos);
-
-        transform.position = new Vector3(transform.position.x, headY, 0f);
-
-        UpdateBody(headY, tailY);
-
-        if (!isMissed)
+        else
         {
-            CheckLNHeadAutoMiss(songPos);
-            CheckTailAutoMiss(songPos);
-        }
+            float headY = CalcHeadY(songPos);
+            float tailY = CalcTailY(songPos);
 
-        if (tailY < DESTROY_Y) Destroy(gameObject);
+            transform.position = new Vector3(transform.position.x, headY, 0f);
+
+            UpdateBody(headY, tailY);
+
+            if (!isMissed)
+            {
+                CheckLNHeadAutoMiss(songPos);
+                CheckTailAutoMiss(songPos);
+            }
+
+            if (tailY < DESTROY_Y) Destroy(gameObject);
+        }
+        UpdateDebuffVisibility();
     }
+
 
     float CalcHeadY(float songPos)
     {
@@ -214,5 +217,17 @@ public class NoteObject : MonoBehaviour
         if (ar < 5f) return (1200f + 120f * (5f - ar)) / 1000f;
         if (ar > 5f) return (1200f - 150f * (ar - 5f)) / 1000f;
         return 1200f / 1000f;
+    }
+
+    private void UpdateDebuffVisibility()
+    {
+        if (DebuffManager.Instance == null) return;
+
+        bool hide = DebuffManager.Instance.ShouldHideNote(
+            transform.position.y);
+
+        if (headRenderer) headRenderer.enabled = !hide;
+        if (bodyRenderer) bodyRenderer.enabled = !hide;
+        if (tailRenderer) tailRenderer.enabled = !hide;
     }
 }
