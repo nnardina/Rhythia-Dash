@@ -9,6 +9,9 @@ public class MainMenuController : MonoBehaviour
     public Button settingsButton;
     public Button quitButton;
 
+    [Header("Settings")]
+    public SettingsPanel settingsPanel;
+
     private void Start()
     {
         playButton.onClick.AddListener(OnPlay);
@@ -23,7 +26,7 @@ public class MainMenuController : MonoBehaviour
 
     private void OnSettings()
     {
-
+        settingsPanel.Open();
     }
 
     private void OnQuit()
