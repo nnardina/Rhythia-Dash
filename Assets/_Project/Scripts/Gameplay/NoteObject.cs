@@ -48,7 +48,10 @@ public class NoteObject : MonoBehaviour
     {
         preempt = ARToPreempt(AR);
         window50 = (300f - 10f * OD) / 1000f;
-        speed = (START_Y - TARGET_Y) / preempt;
+        float scrollMult = GameSettings.Instance != null
+        ? GameSettings.Instance.ScrollSpeed
+        : 1f;
+        speed = (START_Y - TARGET_Y) / preempt * scrollMult;
 
         bodyTransform = transform.Find("Body");
         tailTransform = transform.Find("Tail");
@@ -83,25 +86,22 @@ public class NoteObject : MonoBehaviour
         {
             UpdateRegularNote(songPos);
             if (!isMissed) CheckHeadAutoMiss(songPos);
+            return;
         }
-        else
+        float headY = CalcHeadY(songPos);
+        float tailY = CalcTailY(songPos);
+
+        transform.position = new Vector3(transform.position.x, headY, 0f);
+
+        UpdateBody(headY, tailY);
+
+        if (!isMissed)
         {
-            float headY = CalcHeadY(songPos);
-            float tailY = CalcTailY(songPos);
-
-            transform.position = new Vector3(transform.position.x, headY, 0f);
-
-            UpdateBody(headY, tailY);
-
-            if (!isMissed)
-            {
-                CheckLNHeadAutoMiss(songPos);
-                CheckTailAutoMiss(songPos);
-            }
-
-            if (tailY < DESTROY_Y) Destroy(gameObject);
+            CheckLNHeadAutoMiss(songPos);
+            CheckTailAutoMiss(songPos);
         }
-        UpdateDebuffVisibility();
+
+        if (tailY < DESTROY_Y) Destroy(gameObject);
     }
 
 
@@ -217,17 +217,5 @@ public class NoteObject : MonoBehaviour
         if (ar < 5f) return (1200f + 120f * (5f - ar)) / 1000f;
         if (ar > 5f) return (1200f - 150f * (ar - 5f)) / 1000f;
         return 1200f / 1000f;
-    }
-
-    private void UpdateDebuffVisibility()
-    {
-        if (DebuffManager.Instance == null) return;
-
-        bool hide = DebuffManager.Instance.ShouldHideNote(
-            transform.position.y);
-
-        if (headRenderer) headRenderer.enabled = !hide;
-        if (bodyRenderer) bodyRenderer.enabled = !hide;
-        if (tailRenderer) tailRenderer.enabled = !hide;
     }
 }

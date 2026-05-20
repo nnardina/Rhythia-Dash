@@ -41,8 +41,7 @@ public class GameResultManager : MonoBehaviour
     {
         yield return new WaitForSeconds(endDelay);
         levelEnded = true;
-        var bossDefeated = BossHealthBar.Instance != null
-                            && BossHealthBar.Instance.IsDead();
+        DebuffManager.Instance?.StopPostDeathDebuffs();
         var bossAlive = BossHealthBar.Instance != null
                          && !BossHealthBar.Instance.IsDead();
         if (bossAlive)

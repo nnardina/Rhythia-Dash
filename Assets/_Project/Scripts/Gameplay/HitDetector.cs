@@ -12,14 +12,19 @@ public class HitDetector : MonoBehaviour
     public SpriteRenderer idleRenderer;
     public SpriteRenderer pressedRenderer;
 
+    [Header("Lane Index (0-3)")]
+    public int laneIndex = 0;
+
     private float window300;
     private float window100;
     private float window50;
-
     private NoteObject heldNote = null;
 
     void Start()
     {
+        if (GameSettings.Instance != null)
+            laneKey = GameSettings.Instance.LaneKeys[laneIndex];
+
         window300 = (80f - 6f * OD) / 1000f;
         window100 = (140f - 8f * OD) / 1000f;
         window50 = (200f - 10f * OD) / 1000f;
@@ -36,6 +41,8 @@ public class HitDetector : MonoBehaviour
 
     void HandleKeyDown()
     {
+        DebuffManager.Instance?.OnKeyPressed();
+
         if (idleRenderer != null) idleRenderer.enabled = false;
         if (pressedRenderer != null) pressedRenderer.enabled = true;
 
@@ -114,7 +121,6 @@ public class HitDetector : MonoBehaviour
         {
             if (note.isBeingHeld) continue;
             if (note.isMissed) continue;
-
             if (Mathf.Abs(note.transform.position.x - laneX) > 0.5f) continue;
 
             float delta = Mathf.Abs(Conductor.instance.songPosition - note.beatTime);

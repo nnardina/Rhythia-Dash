@@ -23,6 +23,8 @@ public class HitFeedback : MonoBehaviour
     [Header("Audio")]
     public AudioSource audioSource;
     public AudioClip hitsound;
+    [Tooltip("Звук metal pipe — подставь сам. При активном дебаффе заменяет обычный хитсаунд")]
+    public AudioClip metalPipeSound;
 
     [Header("Animation Settings")]
     public float judgmentFadeDuration = 0.5f;
@@ -46,14 +48,9 @@ public class HitFeedback : MonoBehaviour
     void Start()
     {
         if (audioSource == null)
-        {
-            Debug.LogWarning("[HitFeedback] AudioSource not assigned! Hitsounds will not play.");
-        }
-
+            Debug.LogWarning("[HitFeedback] AudioSource не назначен!");
         if (hitsound == null)
-        {
-            Debug.LogWarning("[HitFeedback] Hitsound clip not assigned!");
-        }
+            Debug.LogWarning("[HitFeedback] Hitsound не назначен!");
     }
 
     public void ShowJudgment(Judgement judgement)
@@ -73,10 +70,26 @@ public class HitFeedback : MonoBehaviour
             judgmentCoroutine = StartCoroutine(AnimateJudgment(sprite));
         }
 
-        if (judgement != Judgement.Miss && audioSource != null && hitsound != null)
-        {
-            audioSource.PlayOneShot(hitsound);
-        }
+        if (judgement != Judgement.Miss)
+            PlayHitSound();
+    }
+
+
+    private void PlayHitSound()
+    {
+        if (audioSource == null) return;
+        bool metalPipeActive = DebuffManager.Instance != null
+                               && DebuffManager.Instance.IsMetalPipeActive();
+
+        AudioClip clip = null;
+
+        if (metalPipeActive && metalPipeSound != null)
+            clip = metalPipeSound;     
+        else if (hitsound != null)
+            clip = hitsound;          
+
+        if (clip != null)
+            audioSource.PlayOneShot(clip);
     }
 
     public void UpdateCombo(int combo)
@@ -121,7 +134,7 @@ public class HitFeedback : MonoBehaviour
 
         if (comboCoroutine != null) StopCoroutine(comboCoroutine);
         comboCoroutine = StartCoroutine(AnimateCombo(digitCount));
-        
+
         lastCombo = combo;
     }
 
@@ -133,30 +146,23 @@ public class HitFeedback : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = elapsed / comboBumpDuration;
-
             float scale = Mathf.Lerp(comboBumpScale, 1f, t);
 
             for (int i = 0; i < digitCount; i++)
-            {
                 comboDigits[i].transform.localScale = Vector3.one * scale;
-            }
 
             yield return null;
         }
 
         for (int i = 0; i < digitCount; i++)
-        {
             comboDigits[i].transform.localScale = Vector3.one;
-        }
     }
 
     IEnumerator AnimateComboBreak()
     {
         int digitCount = 0;
         for (int i = 0; i < comboDigits.Length; i++)
-        {
             if (comboDigits[i].gameObject.activeSelf) digitCount++;
-        }
 
         float elapsed = 0f;
 
@@ -164,9 +170,11 @@ public class HitFeedback : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = elapsed / comboBreakDuration;
-
             float scale = Mathf.Lerp(1f, comboBreakScale, t);
-            Color color = Color.Lerp(comboBreakColor, new Color(comboBreakColor.r, comboBreakColor.g, comboBreakColor.b, 0f), t);
+            Color color = Color.Lerp(
+                comboBreakColor,
+                new Color(comboBreakColor.r, comboBreakColor.g, comboBreakColor.b, 0f),
+                t);
 
             for (int i = 0; i < digitCount; i++)
             {
@@ -201,9 +209,7 @@ public class HitFeedback : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = elapsed / judgmentFadeDuration;
 
-            float scale = Mathf.Lerp(judgmentScaleStart, 1f, t);
-            judgmentImage.transform.localScale = Vector3.one * scale;
-
+            judgmentImage.transform.localScale = Vector3.one * Mathf.Lerp(judgmentScaleStart, 1f, t);
             judgmentImage.color = Color.Lerp(startColor, endColor, t);
 
             yield return null;

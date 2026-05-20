@@ -60,7 +60,7 @@ public static class OsuParser
                     {
                         int mode = int.Parse(Split(line));
                         if (mode != 3)
-                            Debug.LogWarning($"[OsuParser] Ожидался Mode:3 (mania), получен Mode:{mode}");
+                            Debug.LogWarning($"[OsuParser] пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Mode:3 (mania), пїЅпїЅпїЅпїЅпїЅпїЅпїЅ Mode:{mode}");
                     }
                     break;
 
@@ -87,7 +87,7 @@ public static class OsuParser
         beatmap.notes.Sort((a, b) => a.timeSeconds.CompareTo(b.timeSeconds));
 
         int lnCount = beatmap.notes.FindAll(n => n.isLongNote).Count;
-        Debug.Log($"[OsuParser] Загружено {beatmap.notes.Count} нот ({lnCount} LN) | " +
+        Debug.Log($"[OsuParser] пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ {beatmap.notes.Count} пїЅпїЅпїЅ ({lnCount} LN) | " +
                   $"Columns={beatmap.columnCount} | BPM={beatmap.bpm:F1} | " +
                   $"AR={beatmap.approachRate} | OD={beatmap.overallDifficulty}");
 
