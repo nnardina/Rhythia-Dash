@@ -20,14 +20,15 @@ public class NoteObject : MonoBehaviour
     void OnEnable() => All.Add(this);
     void OnDisable() => All.Remove(this);
 
-    private const float START_Y = 10f;
+    private const float BASE_START_Y = 10f;
     private const float TARGET_Y = -3.5f;
     private const float DIM = 0.7f;
     private const float DESTROY_Y = -15f;
 
     private float preempt;
     private float window50;
-    private float speed;
+    private float baseSpeed;
+    private float startY;
 
     private bool headMissRegistered = false;
 
@@ -48,10 +49,13 @@ public class NoteObject : MonoBehaviour
     {
         preempt = ARToPreempt(AR);
         window50 = (300f - 10f * OD) / 1000f;
+        
         float scrollMult = GameSettings.Instance != null
-        ? GameSettings.Instance.ScrollSpeed
-        : 1f;
-        speed = (START_Y - TARGET_Y) / preempt * scrollMult;
+            ? GameSettings.Instance.ScrollSpeed
+            : 1f;
+        
+        startY = BASE_START_Y * scrollMult;
+        baseSpeed = (startY - TARGET_Y) / preempt;
 
         bodyTransform = transform.Find("Body");
         tailTransform = transform.Find("Tail");
@@ -76,6 +80,11 @@ public class NoteObject : MonoBehaviour
             tailRenderer = tailTransform.GetComponent<SpriteRenderer>();
             tailTransform.gameObject.SetActive(isLongNote);
         }
+    }
+
+    private float GetSpeed()
+    {
+        return baseSpeed;
     }
 
     void Update()
@@ -107,6 +116,8 @@ public class NoteObject : MonoBehaviour
 
     float CalcHeadY(float songPos)
     {
+        float speed = GetSpeed();
+        
         if (isBeingHeld) return TARGET_Y;
 
         if (isMissed) return missedHeadY - speed * (songPos - missedSongPos);
@@ -116,6 +127,8 @@ public class NoteObject : MonoBehaviour
 
     float CalcTailY(float songPos)
     {
+        float speed = GetSpeed();
+        
         if (isMissed) return missedTailY - speed * (songPos - missedSongPos);
 
         return TARGET_Y + (endTime - songPos) * speed;
@@ -123,6 +136,7 @@ public class NoteObject : MonoBehaviour
 
     void UpdateRegularNote(float songPos)
     {
+        float speed = GetSpeed();
         float y = TARGET_Y + (beatTime - songPos) * speed;
         transform.position = new Vector3(transform.position.x, y, 0f);
         if (y < DESTROY_Y) Destroy(gameObject);
@@ -133,6 +147,7 @@ public class NoteObject : MonoBehaviour
         if (songPos > beatTime + window50)
         {
             ScoreManager.instance.RegisterHit(Judgement.Miss);
+            BossHealthBar.Instance?.RegisterJudgement(Judgement.Miss);
             isMissed = true;
         }
     }
@@ -143,6 +158,7 @@ public class NoteObject : MonoBehaviour
         {
             headMissRegistered = true;
             ScoreManager.instance.RegisterHit(Judgement.Miss);
+            BossHealthBar.Instance?.RegisterJudgement(Judgement.Miss);
             SetMissed();
         }
     }
@@ -152,6 +168,7 @@ public class NoteObject : MonoBehaviour
         if (isBeingHeld && songPos > endTime + window50)
         {
             ScoreManager.instance.RegisterHit(Judgement.Miss);
+            BossHealthBar.Instance?.RegisterJudgement(Judgement.Miss);
             SetMissed();
             isBeingHeld = false;
         }
@@ -186,6 +203,7 @@ public class NoteObject : MonoBehaviour
     public void SetMissed()
     {
         float songPos = Conductor.instance.songPosition;
+        float speed = GetSpeed();
 
         float currentHeadY = isBeingHeld
             ? TARGET_Y

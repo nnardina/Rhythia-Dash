@@ -58,6 +58,7 @@ public class HitDetector : MonoBehaviour
         if (!closest.isLongNote && absDelta > window50)
         {
             ScoreManager.instance.RegisterHit(Judgement.Miss);
+            BossHealthBar.Instance?.RegisterJudgement(Judgement.Miss);
             closest.isMissed = true;
             return;
         }
@@ -92,6 +93,7 @@ public class HitDetector : MonoBehaviour
         if (tailJudgement == Judgement.Miss)
         {
             ScoreManager.instance.RegisterHit(Judgement.Miss);
+            BossHealthBar.Instance?.RegisterJudgement(Judgement.Miss);
             heldNote.SetMissed();
             heldNote.isBeingHeld = false;
         }

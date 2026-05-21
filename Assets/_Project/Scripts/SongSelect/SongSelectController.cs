@@ -13,7 +13,7 @@ public class SongData
     public string mapper;
     public string difficulty;
     public int bpm;
-    public float stars;
+    public float lengthSeconds;
     public Sprite coverSprite;
     public string osuFileName;
 }
@@ -64,7 +64,15 @@ public class SongSelectController : MonoBehaviour
             if (data != null)
                 songs.Add(data);
         }
+        
+        songs.Sort((a, b) => ExtractLevelNumber(a.difficulty).CompareTo(ExtractLevelNumber(b.difficulty)));
+        
         PopulateSongList(songs);
+        
+        if (songs.Count > 0)
+        {
+            SelectSong(songs[0]);
+        }
     }
 
     private SongData ParseOsuHeader(string fullPath)
@@ -79,18 +87,25 @@ public class SongSelectController : MonoBehaviour
             bool inMetadata = false;
             bool inDifficulty = false;
             bool inTiming = false;
+            bool inHitObjects = false;
+            bool inEvents = false;
+            
+            float lastNoteTime = 0f;
+            string backgroundImage = "";
 
             foreach (string raw in lines)
             {
                 string line = raw.Trim();
 
-                if (line == "[Metadata]") { inMetadata = true; inDifficulty = false; inTiming = false; continue; }
-                if (line == "[Difficulty]") { inDifficulty = true; inMetadata = false; inTiming = false; continue; }
-                if (line == "[TimingPoints]") { inTiming = true; inMetadata = false; inDifficulty = false; continue; }
+                if (line == "[Metadata]") { inMetadata = true; inDifficulty = false; inTiming = false; inHitObjects = false; inEvents = false; continue; }
+                if (line == "[Difficulty]") { inDifficulty = true; inMetadata = false; inTiming = false; inHitObjects = false; inEvents = false; continue; }
+                if (line == "[TimingPoints]") { inTiming = true; inMetadata = false; inDifficulty = false; inHitObjects = false; inEvents = false; continue; }
+                if (line == "[HitObjects]") { inHitObjects = true; inMetadata = false; inDifficulty = false; inTiming = false; inEvents = false; continue; }
+                if (line == "[Events]") { inEvents = true; inMetadata = false; inDifficulty = false; inTiming = false; inHitObjects = false; continue; }
 
-                if (line.StartsWith("[") && line != "[Metadata]" && line != "[Difficulty]" && line != "[TimingPoints]")
+                if (line.StartsWith("[") && line != "[Metadata]" && line != "[Difficulty]" && line != "[TimingPoints]" && line != "[HitObjects]" && line != "[Events]")
                 {
-                    inMetadata = inDifficulty = inTiming = false;
+                    inMetadata = inDifficulty = inTiming = inHitObjects = inEvents = false;
                 }
 
                 if (inMetadata)
@@ -99,19 +114,6 @@ public class SongSelectController : MonoBehaviour
                     else if (line.StartsWith("Artist:")) data.artist = line.Substring(7).Trim();
                     else if (line.StartsWith("Creator:")) data.mapper = line.Substring(8).Trim();
                     else if (line.StartsWith("Version:")) data.difficulty = line.Substring(8).Trim();
-                }
-
-                if (inDifficulty)
-                {
-                    if (line.StartsWith("OverallDifficulty:"))
-                    {
-                        if (float.TryParse(line.Substring(18).Trim(),
-                            System.Globalization.NumberStyles.Float,
-                            System.Globalization.CultureInfo.InvariantCulture, out float stars))
-                        {
-                            data.stars = stars;
-                        }
-                    }
                 }
 
                 if (inTiming && !string.IsNullOrEmpty(line) && !line.StartsWith("["))
@@ -131,6 +133,47 @@ public class SongSelectController : MonoBehaviour
                         }
                     }
                 }
+                
+                if (inEvents && !string.IsNullOrEmpty(line) && !line.StartsWith("[") && !line.StartsWith("//"))
+                {
+                    string[] parts = line.Split(',');
+                    if (parts.Length >= 3 && parts[0] == "0" && parts[1] == "0")
+                    {
+                        backgroundImage = parts[2].Trim().Trim('"');
+                        Debug.Log($"[SongSelect] Found background in {Path.GetFileName(fullPath)}: {backgroundImage}");
+                    }
+                }
+                
+                if (inHitObjects && !string.IsNullOrEmpty(line) && !line.StartsWith("["))
+                {
+                    string[] parts = line.Split(',');
+                    if (parts.Length >= 3)
+                    {
+                        if (float.TryParse(parts[2],
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out float timeMs))
+                        {
+                            lastNoteTime = Mathf.Max(lastNoteTime, timeMs / 1000f);
+                        }
+                    }
+                }
+            }
+
+            data.lengthSeconds = lastNoteTime;
+
+            if (!string.IsNullOrEmpty(backgroundImage))
+            {
+                string imagePath = Path.Combine(Path.GetDirectoryName(fullPath), backgroundImage);
+                Debug.Log($"[SongSelect] Loading image from: {imagePath}, exists: {File.Exists(imagePath)}");
+                data.coverSprite = LoadSpriteFromFile(imagePath);
+                if (data.coverSprite != null)
+                {
+                    Debug.Log($"[SongSelect] Successfully loaded sprite for {data.title}");
+                }
+            }
+            else
+            {
+                Debug.Log($"[SongSelect] No background image found for {Path.GetFileName(fullPath)}");
             }
 
             if (string.IsNullOrEmpty(data.title))
@@ -143,6 +186,28 @@ public class SongSelectController : MonoBehaviour
             Debug.LogError($"[SongSelect] Ошибка парсинга {fullPath}: {e.Message}");
             return null;
         }
+    }
+
+    private Sprite LoadSpriteFromFile(string path)
+    {
+        if (!File.Exists(path))
+            return null;
+
+        try
+        {
+            byte[] fileData = File.ReadAllBytes(path);
+            Texture2D texture = new Texture2D(2, 2);
+            if (texture.LoadImage(fileData))
+            {
+                return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[SongSelect] Не удалось загрузить изображение {path}: {e.Message}");
+        }
+
+        return null;
     }
 
     private void PopulateSongList(List<SongData> data)
@@ -266,10 +331,58 @@ public class SongSelectController : MonoBehaviour
         if (selectedMapperText) selectedMapperText.text = $"Map by {song.mapper}  •  {song.difficulty}";
 
         if (selectedBpmText) selectedBpmText.text = $"BPM: {song.bpm}";
-        if (selectedStarsText) selectedStarsText.text = song.stars > 0 ? song.stars.ToString("F2") : "";
+        
+        if (selectedStarsText)
+        {
+            int minutes = Mathf.FloorToInt(song.lengthSeconds / 60f);
+            int seconds = Mathf.FloorToInt(song.lengthSeconds % 60f);
+            selectedStarsText.text = $"{minutes:D2}:{seconds:D2}";
+        }
 
-        if (selectedCoverImage && song.coverSprite)
-            selectedCoverImage.sprite = song.coverSprite;
+        if (selectedCoverImage)
+        {
+            if (song.coverSprite != null)
+            {
+                selectedCoverImage.sprite = song.coverSprite;
+                selectedCoverImage.enabled = true;
+                
+                Transform parent = selectedCoverImage.transform.parent;
+                if (parent != null)
+                {
+                    UnityEngine.UI.RectMask2D rectMask = parent.GetComponent<UnityEngine.UI.RectMask2D>();
+                    if (rectMask == null)
+                    {
+                        rectMask = parent.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
+                    }
+                }
+                
+                RectTransform imageRect = selectedCoverImage.GetComponent<RectTransform>();
+                if (imageRect != null)
+                {
+                    Texture2D texture = song.coverSprite.texture;
+                    float imageWidth = texture.width;
+                    float imageHeight = texture.height;
+                    
+                    float containerWidth = 500f;
+                    float containerHeight = 500f;
+                    
+                    float scaleX = containerWidth / imageWidth;
+                    float scaleY = containerHeight / imageHeight;
+                    
+                    float scale = Mathf.Max(scaleX, scaleY);
+                    
+                    float finalWidth = imageWidth * scale;
+                    float finalHeight = imageHeight * scale;
+                    
+                    imageRect.sizeDelta = new Vector2(finalWidth, finalHeight);
+                }
+            }
+            else
+            {
+                selectedCoverImage.sprite = null;
+                selectedCoverImage.enabled = false;
+            }
+        }
     }
 
     private void OnSearch(string query)
@@ -327,5 +440,25 @@ public class SongSelectController : MonoBehaviour
         if (lower.Contains("expert")) return new Color(0.55f, 0.1f, 0.9f);
 
         return new Color(0.3f, 0.5f, 1.0f);
+    }
+
+    private int ExtractLevelNumber(string difficulty)
+    {
+        if (string.IsNullOrEmpty(difficulty))
+            return int.MaxValue;
+
+        string lower = difficulty.ToLower();
+        
+        if (lower.Contains("tutorial"))
+            return 0;
+
+        System.Text.RegularExpressions.Match match = 
+            System.Text.RegularExpressions.Regex.Match(difficulty, @"level\s*(\d+)", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        
+        if (match.Success && int.TryParse(match.Groups[1].Value, out int level))
+            return level;
+
+        return int.MaxValue;
     }
 }

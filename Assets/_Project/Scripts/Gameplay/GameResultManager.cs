@@ -42,12 +42,23 @@ public class GameResultManager : MonoBehaviour
         yield return new WaitForSeconds(endDelay);
         levelEnded = true;
         DebuffManager.Instance?.StopPostDeathDebuffs();
-        var bossAlive = BossHealthBar.Instance != null
-                         && !BossHealthBar.Instance.IsDead();
-        if (bossAlive)
-            DefeatMenu.Instance?.ShowDefeat();
-        else
+        
+        bool isTutorial = BossHealthBar.Instance != null 
+                          && BossHealthBar.Instance.IsTutorialMode();
+        
+        if (isTutorial)
+        {
             SaveResultAndGoToScreen();
+        }
+        else
+        {
+            var bossAlive = BossHealthBar.Instance != null
+                             && !BossHealthBar.Instance.IsDead();
+            if (bossAlive)
+                DefeatMenu.Instance?.ShowDefeat();
+            else
+                SaveResultAndGoToScreen();
+        }
     }
 
     private void SaveResultAndGoToScreen()

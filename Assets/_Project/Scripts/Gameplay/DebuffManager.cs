@@ -23,11 +23,10 @@ public class DebuffManager : MonoBehaviour
     public float metalPipeDuration = 10f;
 
     [Header("=== MOTION BLUR ===")]
-    [Tooltip("Компонент на Main Camera. Должен быть выключен по умолчанию.")]
     public SimpleMotionBlur motionBlur;
     public float motionBlurDuration = 8f;
-    [Range(0f, 0.95f)]
-    public float motionBlurIntensity = 0.75f;
+    [Range(0f, 0.99f)]
+    public float motionBlurIntensity = 0.99f;
 
     [Header("=== SHAKE ===")]
     public float shakeAmount = 0.10f;
@@ -274,6 +273,8 @@ public class DebuffManager : MonoBehaviour
 
         motionBlurActive = true;
         motionBlur.blurAmount = motionBlurIntensity;
+        motionBlur.blurSize = 0.1f;
+        motionBlur.blurSamples = 24;
         motionBlur.enabled = true;
 
         yield return new WaitForSeconds(motionBlurDuration);

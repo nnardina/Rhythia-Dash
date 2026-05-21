@@ -34,6 +34,21 @@ public class BossHealthBar : MonoBehaviour
     public float flashDuration = 0.15f;
     public Color flashColor = new Color(1f, 0.3f, 0.3f, 1f);
 
+    [Header("Boss Death Animation")]
+    public Image moggedImage1;
+    public Image moggedImage2;
+    public Image moggedImage3;
+    public Vector2 mogged1Position = new Vector2(0, 50);
+    public Vector2 mogged2Position = new Vector2(-30, -20);
+    public Vector2 mogged3Position = new Vector2(30, -20);
+    public Vector2 mogged1Size = new Vector2(100, 100);
+    public Vector2 mogged2Size = new Vector2(100, 100);
+    public Vector2 mogged3Size = new Vector2(100, 100);
+    public float mogged1Rotation = 0f;
+    public float mogged2Rotation = -15f;
+    public float mogged3Rotation = 15f;
+    public float moggedFadeDuration = 0.5f;
+
     private float hp;
     private bool isDead;
     private float HpPerSegment => maxHP / segments.Length;
@@ -43,6 +58,8 @@ public class BossHealthBar : MonoBehaviour
     private bool isAnimating = false;
 
     private bool[] segmentDead;
+
+    private bool isTutorialMode = false;
 
     public System.Action OnBossDeath;
     public System.Action<float> OnHPChanged;
@@ -73,6 +90,28 @@ public class BossHealthBar : MonoBehaviour
         foreach (var cross in crosses)
             if (cross != null) cross.SetActive(false);
 
+        if (moggedImage1 != null)
+        {
+            moggedImage1.gameObject.SetActive(false);
+            moggedImage1.rectTransform.anchoredPosition = mogged1Position;
+            moggedImage1.rectTransform.sizeDelta = mogged1Size;
+            moggedImage1.rectTransform.localRotation = Quaternion.Euler(0, 0, mogged1Rotation);
+        }
+        if (moggedImage2 != null)
+        {
+            moggedImage2.gameObject.SetActive(false);
+            moggedImage2.rectTransform.anchoredPosition = mogged2Position;
+            moggedImage2.rectTransform.sizeDelta = mogged2Size;
+            moggedImage2.rectTransform.localRotation = Quaternion.Euler(0, 0, mogged2Rotation);
+        }
+        if (moggedImage3 != null)
+        {
+            moggedImage3.gameObject.SetActive(false);
+            moggedImage3.rectTransform.anchoredPosition = mogged3Position;
+            moggedImage3.rectTransform.sizeDelta = mogged3Size;
+            moggedImage3.rectTransform.localRotation = Quaternion.Euler(0, 0, mogged3Rotation);
+        }
+
         RefreshSegments(instant: true);
 
         if (deathPanel) deathPanel.SetActive(false);
@@ -94,6 +133,49 @@ public class BossHealthBar : MonoBehaviour
         RefreshSegments(instant: true);
     }
 
+    public void SetTutorialMode(bool enabled)
+    {
+        isTutorialMode = enabled;
+
+        if (isTutorialMode)
+        {
+            if (normalPanel != null)
+                normalPanel.SetActive(false);
+
+            foreach (var seg in segments)
+                if (seg != null) seg.gameObject.SetActive(false);
+
+            foreach (var cross in crosses)
+                if (cross != null) cross.SetActive(false);
+        }
+    }
+
+    public void HideTutorialBoss()
+    {
+        if (bossImage != null)
+            StartCoroutine(FadeTutorialBoss());
+    }
+
+    private IEnumerator FadeTutorialBoss()
+    {
+        if (bossImage == null) yield break;
+
+        float elapsed = 0f;
+        float duration = 1f;
+        Color startColor = bossImage.color;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsed / duration);
+            bossImage.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
+            yield return null;
+        }
+
+        bossImage.color = new Color(startColor.r, startColor.g, startColor.b, 0f);
+        bossImage.gameObject.SetActive(false);
+    }
+
 
     public void RegisterJudgement(Judgement j)
     {
@@ -102,13 +184,13 @@ public class BossHealthBar : MonoBehaviour
             case Judgement.Hit300: TakeDamage(damagePerHit300); break;
             case Judgement.Hit100: TakeDamage(damagePerHit100); break;
             case Judgement.Hit50: TakeDamage(damagePerHit50); break;
-            case Judgement.Miss: break;
+            case Judgement.Miss: HealBoss(damagePerHit100); break;
         }
     }
 
     private void TakeDamage(float amount)
     {
-        if (isDead) return;
+        if (isDead || isTutorialMode) return;
 
         hp = Mathf.Max(0f, hp - amount);
         OnHPChanged?.Invoke(hp);
@@ -123,6 +205,46 @@ public class BossHealthBar : MonoBehaviour
 
         if (hp <= 0f && !isDead)
             StartCoroutine(DeathSequence());
+    }
+
+    private void HealBoss(float amount)
+    {
+        if (isDead || isTutorialMode) return;
+
+        hp = Mathf.Min(maxHP, hp + amount);
+        OnHPChanged?.Invoke(hp);
+
+        RefreshSegments(instant: false);
+        CheckSegmentRevival();
+
+        Debug.Log($"[Boss] Healed! HP: {hp:F1}/{maxHP}");
+    }
+
+    private void CheckSegmentRevival()
+    {
+        for (int i = segments.Length - 1; i >= 0; i--)
+        {
+            if (!segmentDead[i]) continue;
+
+            var segMin = i * HpPerSegment;
+            var segMax = (i + 1) * HpPerSegment;
+
+            bool shouldRevive;
+            if (i == 4)
+                shouldRevive = hp > segMin + HpPerSegment * 0.2f;
+            else
+                shouldRevive = hp > segMin;
+
+            if (!shouldRevive) continue;
+
+            segmentDead[i] = false;
+
+            if (crosses[i] != null)
+                crosses[i].SetActive(false);
+
+            if (segments[i] != null)
+                segments[i].gameObject.SetActive(true);
+        }
     }
 
 
@@ -282,28 +404,64 @@ public class BossHealthBar : MonoBehaviour
     {
         if (bossImage == null) yield break;
 
-        var elapsed = 0f;
-        var duration = 1.0f;
+        Color darkenedColor = new Color(
+            bossOriginalColor.r * 0.2f,
+            bossOriginalColor.g * 0.2f,
+            bossOriginalColor.b * 0.2f,
+            bossOriginalColor.a);
 
-        RectTransform rt = bossImage.rectTransform;
-        Vector2 startPos = rt.anchoredPosition;
-        Vector2 endPos = startPos + new Vector2(0f, -80f);
+        float elapsed = 0f;
+        float darkenDuration = 0.5f;
 
-        while (elapsed < duration)
+        while (elapsed < darkenDuration)
         {
             elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-            rt.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
-            bossImage.color = new Color(
-                bossOriginalColor.r,
-                bossOriginalColor.g,
-                bossOriginalColor.b,
-                Mathf.Lerp(1f, 0f, t));
-
+            float t = elapsed / darkenDuration;
+            bossImage.color = Color.Lerp(bossOriginalColor, darkenedColor, t);
             yield return null;
         }
 
-        bossImage.gameObject.SetActive(false);
+        bossImage.color = darkenedColor;
+
+        if (moggedImage1 != null)
+        {
+            moggedImage1.gameObject.SetActive(true);
+            yield return StartCoroutine(FadeInMogged(moggedImage1));
+        }
+
+        if (moggedImage2 != null)
+        {
+            moggedImage2.gameObject.SetActive(true);
+            yield return StartCoroutine(FadeInMogged(moggedImage2));
+        }
+
+        if (moggedImage3 != null)
+        {
+            moggedImage3.gameObject.SetActive(true);
+            yield return StartCoroutine(FadeInMogged(moggedImage3));
+        }
+    }
+
+    private IEnumerator FadeInMogged(Image moggedImage)
+    {
+        Color startColor = moggedImage.color;
+        startColor.a = 0f;
+        moggedImage.color = startColor;
+
+        float elapsed = 0f;
+        while (elapsed < moggedFadeDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / moggedFadeDuration;
+            Color newColor = moggedImage.color;
+            newColor.a = Mathf.Lerp(0f, 1f, t);
+            moggedImage.color = newColor;
+            yield return null;
+        }
+
+        Color finalColor = moggedImage.color;
+        finalColor.a = 1f;
+        moggedImage.color = finalColor;
     }
 
     private IEnumerator FadeIn(GameObject target, float duration)
@@ -325,4 +483,5 @@ public class BossHealthBar : MonoBehaviour
     public float GetHP() => hp;
     public float GetPercent() => hp / maxHP;
     public bool IsDead() => isDead;
+    public bool IsTutorialMode() => isTutorialMode;
 }

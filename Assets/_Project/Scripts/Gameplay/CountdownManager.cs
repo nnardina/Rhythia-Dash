@@ -31,14 +31,19 @@ public class CountdownManager : MonoBehaviour
         countdownFinished = false;
 
         float preempt = NoteObject.ARToPreempt(arValue);
-        float speed = (startY - targetY) / preempt;
+        float scrollMult = GameSettings.Instance != null
+            ? GameSettings.Instance.ScrollSpeed
+            : 1f;
+        
+        float adjustedStartY = startY * scrollMult;
+        float speed = (adjustedStartY - targetY) / preempt;
 
         GameObject[] arrows = new GameObject[laneXPositions.Length];
 
         for (int i = 0; i < laneXPositions.Length; i++)
         {
             GameObject arrow = new GameObject($"CountdownArrow_{i}");
-            arrow.transform.position = new Vector3(laneXPositions[i], startY, 0f);
+            arrow.transform.position = new Vector3(laneXPositions[i], adjustedStartY, 0f);
             arrow.transform.localScale = Vector3.one * arrowScale;
 
             SpriteRenderer sr = arrow.AddComponent<SpriteRenderer>();
@@ -54,7 +59,7 @@ public class CountdownManager : MonoBehaviour
         while (true)
         {
             elapsed += Time.deltaTime;
-            float currentY = startY - speed * elapsed;
+            float currentY = adjustedStartY - speed * elapsed;
 
             for (int i = 0; i < arrows.Length; i++)
             {
