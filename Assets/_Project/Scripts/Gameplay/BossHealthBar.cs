@@ -86,9 +86,9 @@ public class BossHealthBar : MonoBehaviour
         maxHP = totalNotes * hpPerNote;
         hp = maxHP;
 
-        damagePerHit300 = maxHP / (totalNotes * 0.20f);
-        damagePerHit100 = maxHP / (totalNotes * 0.40f);
-        damagePerHit50 = maxHP / (totalNotes * 0.60f);
+        damagePerHit300 = maxHP / (totalNotes * 0.20f * 3.0f);
+        damagePerHit100 = maxHP / (totalNotes * 0.40f * 3.0f);
+        damagePerHit50 = maxHP / (totalNotes * 0.60f * 3.0f);
 
         segmentDead = new bool[segments.Length];
         RefreshSegments(instant: true);

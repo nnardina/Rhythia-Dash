@@ -125,13 +125,14 @@ public class Spawner : MonoBehaviour
                 BossHealthBar.Instance.InitFromNoteCount(notes.Count);
 
             conductor.StartWithCountdown(preempt);
+            
+            ready = true;
 
             if (countdownManager != null)
             {
                 StartCoroutine(countdownManager.StartCountdown(arValue));
                 yield return new WaitUntil(() => countdownManager.IsCountdownFinished());
             }
-            ready = true;
 
             conductor.SetClipAndPlay(clip, beatmap.bpm, beatmap.firstBeatOffset);
         }
