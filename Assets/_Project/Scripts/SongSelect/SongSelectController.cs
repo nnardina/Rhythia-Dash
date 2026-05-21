@@ -291,7 +291,10 @@ public class SongSelectController : MonoBehaviour
 
     private void OnBack()
     {
-        SceneManager.LoadScene("Main_Menu");
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Main_Menu");
+        else
+            SceneManager.LoadScene("Main_Menu");
     }
 
     private void OnPlay()
@@ -305,7 +308,10 @@ public class SongSelectController : MonoBehaviour
         PlayerPrefs.SetString("SelectedOsuFile", currentSelected.osuFileName);
         PlayerPrefs.Save();
 
-        SceneManager.LoadScene("Game");
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Game");
+        else
+            SceneManager.LoadScene("Game");
     }
 
     private Color GetDifficultyColor(string diff)

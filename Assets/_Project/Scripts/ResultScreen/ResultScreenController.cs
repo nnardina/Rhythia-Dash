@@ -180,11 +180,17 @@ public class ResultScreenController : MonoBehaviour
 
     private void OnRetry()
     {
-        SceneManager.LoadScene("Game");
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Game");
+        else
+            SceneManager.LoadScene("Game");
     }
 
     private void OnMenu()
     {
-        SceneManager.LoadScene("Song_Select");
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Song_Select");
+        else
+            SceneManager.LoadScene("Song_Select");
     }
 }

@@ -21,7 +21,10 @@ public class MainMenuController : MonoBehaviour
 
     private void OnPlay()
     {
-        SceneManager.LoadScene("Song_Select");
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Song_Select");
+        else
+            SceneManager.LoadScene("Song_Select");
     }
 
     private void OnSettings()

@@ -67,7 +67,10 @@ public class GameResultManager : MonoBehaviour
 
         PlayerPrefs.Save();
 
-        SceneManager.LoadScene("Result_Screen");
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Result_Screen");
+        else
+            SceneManager.LoadScene("Result_Screen");
     }
 
 }
