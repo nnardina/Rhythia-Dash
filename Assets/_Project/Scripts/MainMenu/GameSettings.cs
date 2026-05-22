@@ -4,10 +4,8 @@ public class GameSettings : MonoBehaviour
 {
     public static GameSettings Instance { get; private set; }
 
-    // Скорость прокрутки (множитель, 1.0 = стандарт)
     public float ScrollSpeed { get; private set; } = 1f;
-
-    // Клавиши для 4 колонок
+    public float DamageDecrease { get; private set; } = 1f;
     public KeyCode[] LaneKeys { get; private set; } =
     {
         KeyCode.A,
@@ -17,6 +15,7 @@ public class GameSettings : MonoBehaviour
     };
 
     private const string KEY_SCROLL_SPEED = "ScrollSpeed";
+    private const string KEY_DAMAGE_DECREASE = "DamageDecrease";
     private const string KEY_LANE_0 = "LaneKey0";
     private const string KEY_LANE_1 = "LaneKey1";
     private const string KEY_LANE_2 = "LaneKey2";
@@ -39,6 +38,11 @@ public class GameSettings : MonoBehaviour
         ScrollSpeed = Mathf.Clamp(value, 0.5f, 3f);
     }
 
+    public void SetDamageDeacrease(float value)
+    {
+        DamageDecrease = Mathf.Clamp(value, 0.5f, 3f);
+    }
+
     public void SetLaneKey(int lane, KeyCode key)
     {
         if (lane < 0 || lane >= LaneKeys.Length) return;
@@ -48,6 +52,7 @@ public class GameSettings : MonoBehaviour
     public void Save()
     {
         PlayerPrefs.SetFloat(KEY_SCROLL_SPEED, ScrollSpeed);
+        PlayerPrefs.SetFloat(KEY_DAMAGE_DECREASE, DamageDecrease);
         PlayerPrefs.SetInt(KEY_LANE_0, (int)LaneKeys[0]);
         PlayerPrefs.SetInt(KEY_LANE_1, (int)LaneKeys[1]);
         PlayerPrefs.SetInt(KEY_LANE_2, (int)LaneKeys[2]);
@@ -58,6 +63,7 @@ public class GameSettings : MonoBehaviour
     public void Load()
     {
         ScrollSpeed = PlayerPrefs.GetFloat(KEY_SCROLL_SPEED, 1f);
+        DamageDecrease = PlayerPrefs.GetFloat(KEY_DAMAGE_DECREASE, 1f);
         LaneKeys[0] = (KeyCode)PlayerPrefs.GetInt(KEY_LANE_0, (int)KeyCode.A);
         LaneKeys[1] = (KeyCode)PlayerPrefs.GetInt(KEY_LANE_1, (int)KeyCode.S);
         LaneKeys[2] = (KeyCode)PlayerPrefs.GetInt(KEY_LANE_2, (int)KeyCode.D);

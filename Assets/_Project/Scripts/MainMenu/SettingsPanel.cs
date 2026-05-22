@@ -6,7 +6,9 @@ public class SettingsPanel : MonoBehaviour
 {
     public GameObject panelRoot;
     public Slider scrollSpeedSlider;
+    public Slider damageDecreaseSlider;
     public TextMeshProUGUI scrollSpeedLabel;
+    public TextMeshProUGUI damageDecreaseLabel;
     public Button[] keyBindButtons;
     public TextMeshProUGUI[] keyBindLabels;
     public Button saveButton;
@@ -15,19 +17,22 @@ public class SettingsPanel : MonoBehaviour
     private int listeningLane = -1;
     private KeyCode[] tempKeys = new KeyCode[4];
     private float tempScrollSpeed;
+    private float tempDamageDecrease;
 
     private void Start()
     {
-        // Назначаем слушателей в Start, чтобы всё успело прогрузиться
         for (int i = 0; i < keyBindButtons.Length; i++)
         {
             int lane = i;
-            keyBindButtons[i].onClick.RemoveAllListeners(); // На всякий случай чистим
+            keyBindButtons[i].onClick.RemoveAllListeners();
             keyBindButtons[i].onClick.AddListener(() => StartListening(lane));
         }
 
         scrollSpeedSlider.onValueChanged.RemoveAllListeners();
-        scrollSpeedSlider.onValueChanged.AddListener(OnSliderChanged);
+        scrollSpeedSlider.onValueChanged.AddListener(OnSpeedSliderChanged);
+
+        damageDecreaseSlider.onValueChanged.RemoveAllListeners();
+        damageDecreaseSlider.onValueChanged.AddListener(OnDamageSliderChanged);
 
         saveButton.onClick.RemoveAllListeners();
         saveButton.onClick.AddListener(OnSave);
@@ -40,15 +45,14 @@ public class SettingsPanel : MonoBehaviour
     {
         if (GameSettings.Instance == null) return;
 
-        // 1. Сначала подгружаем данные
         tempScrollSpeed = GameSettings.Instance.ScrollSpeed;
+        tempDamageDecrease = GameSettings.Instance.DamageDecrease;
         for (int i = 0; i < 4; i++)
             tempKeys[i] = GameSettings.Instance.LaneKeys[i];
 
-        // 2. Активируем объект
         panelRoot.SetActive(true);
 
-        // 3. Сразу обновляем визуальную часть
+
         listeningLane = -1;
         RefreshUI();
     }
@@ -58,6 +62,9 @@ public class SettingsPanel : MonoBehaviour
         scrollSpeedSlider.SetValueWithoutNotify(tempScrollSpeed);
         scrollSpeedLabel.text = $"Scroll Speed: {tempScrollSpeed:F1}x";
 
+        damageDecreaseSlider.SetValueWithoutNotify(tempDamageDecrease);
+        damageDecreaseLabel.text = $"Damage Decrease: {tempDamageDecrease:F1}x";
+
         for (int i = 0; i < keyBindLabels.Length; i++)
         {
             keyBindLabels[i].text = tempKeys[i].ToString();
@@ -65,17 +72,23 @@ public class SettingsPanel : MonoBehaviour
         }
     }
 
-    private void OnSliderChanged(float v)
+    private void OnSpeedSliderChanged(float v)
     {
         tempScrollSpeed = Mathf.Round(v * 10f) / 10f;
         scrollSpeedLabel.text = $"Scroll Speed: {tempScrollSpeed:F1}x";
+    }
+
+    private void OnDamageSliderChanged(float v)
+    {
+        tempDamageDecrease = Mathf.Round(v * 10f) / 10f;
+        damageDecreaseLabel.text = $"Damage Decrease: {tempDamageDecrease:F1}x";
     }
 
     private void StartListening(int lane)
     {
         if (listeningLane >= 0) SetButtonColor(listeningLane, new Color(0.1f, 0.15f, 0.3f));
         listeningLane = lane;
-        keyBindLabels[lane].text = "???"; // Нагляднее, что ждем нажатия
+        keyBindLabels[lane].text = "???";
         SetButtonColor(lane, new Color(1f, 0.8f, 0f));
     }
 
@@ -110,6 +123,7 @@ public class SettingsPanel : MonoBehaviour
     private void OnSave()
     {
         GameSettings.Instance.SetScrollSpeed(tempScrollSpeed);
+        GameSettings.Instance.SetDamageDeacrease(tempDamageDecrease);
         for (int i = 0; i < 4; i++) GameSettings.Instance.SetLaneKey(i, tempKeys[i]);
         GameSettings.Instance.Save();
         panelRoot.SetActive(false);

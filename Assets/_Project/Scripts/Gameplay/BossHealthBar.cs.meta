@@ -1,14 +1,2 @@
 fileFormatVersion: 2
 guid: ff24593de65d2534fad0f1c161b51932
-MonoImporter:
-  externalObjects: {}
-  serializedVersion: 2
-  defaultReferences:
-  - normalPanel: {instanceID: 0}
-  - deathPanel: {instanceID: 0}
-  - bossImage: {instanceID: 0}
-  executionOrder: 0
-  icon: {instanceID: 0}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
