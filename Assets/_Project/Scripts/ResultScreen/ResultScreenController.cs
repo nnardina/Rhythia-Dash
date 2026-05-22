@@ -29,7 +29,8 @@ public class ResultScreenController : MonoBehaviour
 
     [Header("Right Panel — Track Info")]
     public TextMeshProUGUI txtLine1; 
-    public TextMeshProUGUI txtLine2; 
+    public TextMeshProUGUI txtLine2;
+    public Image coverImage; 
 
     [Header("Buttons")]
     public Button btnRetry;
@@ -139,17 +140,23 @@ public class ResultScreenController : MonoBehaviour
             var artist = "";
             var mapper = "";
             var difficulty = "";
+            var backgroundImage = "";
 
             string[] lines = System.IO.File.ReadAllLines(fullPath);
             var inMetadata = false;
+            var inEvents = false;
 
             foreach (var raw in lines)
             {
                 var line = raw.Trim();
 
-                if (line == "[Metadata]") { inMetadata = true; continue; }
-                if (line.StartsWith("[") && line != "[Metadata]")
+                if (line == "[Metadata]") { inMetadata = true; inEvents = false; continue; }
+                if (line == "[Events]") { inEvents = true; inMetadata = false; continue; }
+                if (line.StartsWith("[") && line != "[Metadata]" && line != "[Events]")
+                {
                     inMetadata = false;
+                    inEvents = false;
+                }
 
                 if (inMetadata)
                 {
@@ -162,6 +169,15 @@ public class ResultScreenController : MonoBehaviour
                     else if (line.StartsWith("Version:"))
                         difficulty = line.Substring(8).Trim();
                 }
+
+                if (inEvents && !string.IsNullOrEmpty(line) && !line.StartsWith("[") && !line.StartsWith("//"))
+                {
+                    string[] parts = line.Split(',');
+                    if (parts.Length >= 3 && parts[0] == "0" && parts[1] == "0")
+                    {
+                        backgroundImage = parts[2].Trim().Trim('"');
+                    }
+                }
             }
 
             if (txtLine1)
@@ -169,6 +185,27 @@ public class ResultScreenController : MonoBehaviour
 
             if (txtLine2)
                 txtLine2.text = $"Map by {mapper}  •  {difficulty}";
+
+            if (coverImage && !string.IsNullOrEmpty(backgroundImage))
+            {
+                string imagePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(fullPath), backgroundImage);
+                Sprite sprite = LoadSpriteFromFile(imagePath);
+                if (sprite != null)
+                {
+                    coverImage.sprite = sprite;
+                    coverImage.enabled = true;
+                    
+                    Transform parent = coverImage.transform.parent;
+                    if (parent != null)
+                    {
+                        UnityEngine.UI.RectMask2D rectMask = parent.GetComponent<UnityEngine.UI.RectMask2D>();
+                        if (rectMask == null)
+                        {
+                            rectMask = parent.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
+                        }
+                    }
+                }
+            }
         }
         catch (System.Exception e)
         {
@@ -178,13 +215,41 @@ public class ResultScreenController : MonoBehaviour
         }
     }
 
+    private Sprite LoadSpriteFromFile(string path)
+    {
+        if (!System.IO.File.Exists(path))
+            return null;
+
+        try
+        {
+            byte[] fileData = System.IO.File.ReadAllBytes(path);
+            Texture2D texture = new Texture2D(2, 2);
+            if (texture.LoadImage(fileData))
+            {
+                return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[ResultScreen] Не удалось загрузить изображение {path}: {e.Message}");
+        }
+
+        return null;
+    }
+
     private void OnRetry()
     {
-        SceneManager.LoadScene("Game");
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Game");
+        else
+            SceneManager.LoadScene("Game");
     }
 
     private void OnMenu()
     {
-        SceneManager.LoadScene("Song_Select");
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Song_Select");
+        else
+            SceneManager.LoadScene("Song_Select");
     }
 }

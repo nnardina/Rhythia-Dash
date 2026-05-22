@@ -28,6 +28,10 @@ public class Spawner : MonoBehaviour
     [Tooltip("��� ����� .osu � ����� StreamingAssets (��������: map.osu)")]
     public string osuFileName = "map.osu";
 
+    [Header("Tutorial Settings")]
+    [Tooltip("Задержка перед началом спавна нот (для туториала)")]
+    public float noteSpawnDelay = 0f;
+
     [Header("Lanes")]
     public float[] laneXPositions = { -7f, -5f, -3f, -1f };
 
@@ -41,6 +45,7 @@ public class Spawner : MonoBehaviour
     private float preempt;
     private bool ready = false;
     private OsuBeatmap beatmap;
+    private bool isTutorialLevel = false;
 
     public static Spawner instance;
 
@@ -121,17 +126,39 @@ public class Spawner : MonoBehaviour
 
             AudioClip clip = DownloadHandlerAudioClip.GetContent(req);
 
+            if (BossManager.Instance != null)
+            {
+                BossManager.Instance.SetBossType(beatmap.bossType);
+                BossManager.Instance.ApplyBossToBossHealthBar();
+            }
+
             if (BossHealthBar.Instance != null)
                 BossHealthBar.Instance.InitFromNoteCount(notes.Count);
 
+            bool isTutorial = beatmap.bossType == 0;
+            isTutorialLevel = isTutorial;
+            
+            if (isTutorial)
+            {
+                if (BossHealthBar.Instance != null)
+                    BossHealthBar.Instance.SetTutorialMode(true);
+
+                if (TutorialMessage.Instance != null)
+                {
+                    TutorialMessage.Instance.ShowTutorialMessage();
+                    noteSpawnDelay = 10f;
+                }
+            }
+
             conductor.StartWithCountdown(preempt);
+
+            ready = true;
 
             if (countdownManager != null)
             {
                 StartCoroutine(countdownManager.StartCountdown(arValue));
                 yield return new WaitUntil(() => countdownManager.IsCountdownFinished());
             }
-            ready = true;
 
             conductor.SetClipAndPlay(clip, beatmap.bpm, beatmap.firstBeatOffset);
         }
@@ -144,6 +171,12 @@ public class Spawner : MonoBehaviour
         while (nextIndex < notes.Count &&
                conductor.songPosition >= notes[nextIndex].timeSeconds - preempt)
         {
+            if (isTutorialLevel && notes[nextIndex].timeSeconds < noteSpawnDelay)
+            {
+                nextIndex++;
+                continue;
+            }
+            
             SpawnNote(notes[nextIndex]);
             nextIndex++;
         }
@@ -153,6 +186,11 @@ public class Spawner : MonoBehaviour
     {
         int lane = Mathf.Clamp(data.lane, 0, laneXPositions.Length - 1);
         float x = laneXPositions[lane];
+
+        float scrollMult = GameSettings.Instance != null
+            ? GameSettings.Instance.ScrollSpeed
+            : 1f;
+        float startY = 10f * scrollMult;
 
         GameObject obj = Instantiate(notePrefab);
         NoteObject note = obj.GetComponent<NoteObject>();
@@ -190,7 +228,7 @@ public class Spawner : MonoBehaviour
             }
         }
 
-        obj.transform.position = new Vector3(x, 10f, 0f);
+        obj.transform.position = new Vector3(x, startY, 0f);
     }
 
     static AudioType GetAudioType(string path)

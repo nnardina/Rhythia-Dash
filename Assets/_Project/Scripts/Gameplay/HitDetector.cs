@@ -25,8 +25,8 @@ public class HitDetector : MonoBehaviour
         if (GameSettings.Instance != null)
             laneKey = GameSettings.Instance.LaneKeys[laneIndex];
 
-        window300 = (80f - 6f * OD) / 1000f;
-        window100 = (140f - 8f * OD) / 1000f;
+        window300 = (200f - 15f * OD) / 1000f;
+        window100 = (200f - 13f * OD) / 1000f;
         window50 = (200f - 10f * OD) / 1000f;
 
         if (idleRenderer != null) idleRenderer.enabled = true;
@@ -58,6 +58,7 @@ public class HitDetector : MonoBehaviour
         if (!closest.isLongNote && absDelta > window50)
         {
             ScoreManager.instance.RegisterHit(Judgement.Miss);
+            BossHealthBar.Instance?.RegisterJudgement(Judgement.Miss);
             closest.isMissed = true;
             return;
         }
@@ -92,6 +93,7 @@ public class HitDetector : MonoBehaviour
         if (tailJudgement == Judgement.Miss)
         {
             ScoreManager.instance.RegisterHit(Judgement.Miss);
+            BossHealthBar.Instance?.RegisterJudgement(Judgement.Miss);
             heldNote.SetMissed();
             heldNote.isBeingHeld = false;
         }

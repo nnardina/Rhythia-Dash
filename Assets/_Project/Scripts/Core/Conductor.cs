@@ -42,11 +42,6 @@ public class Conductor : MonoBehaviour
 
         audioSource.clip = clip;
         audioSource.Play();
-
-        dspSongTime = (float)AudioSettings.dspTime;
-        totalPausedTime = 0f;
-        startOffset = 0f;
-        isRunning = true;
     }
 
     void Update()

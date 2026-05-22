@@ -3,8 +3,15 @@ using UnityEngine;
 [RequireComponent(typeof(Camera))]
 public class SimpleMotionBlur : MonoBehaviour
 {
-    [Range(0f, 0.95f)]
-    public float blurAmount = 0.75f;
+    [Range(0f, 0.99f)]
+    public float blurAmount = 0.99f;
+    
+    [Header("Directional Blur")]
+    [Range(0f, 0.2f)]
+    public float blurSize = 0.05f;
+    
+    [Range(4, 32)]
+    public int blurSamples = 16;
 
     private RenderTexture accumBuffer;
     private Material blurMat;
@@ -12,10 +19,10 @@ public class SimpleMotionBlur : MonoBehaviour
 
     private void OnEnable()
     {
-        Shader s = Shader.Find("Hidden/MotionBlur");
+        Shader s = Shader.Find("Custom/MotionBlur");
         if (s == null)
         {
-            Debug.LogError("[MotionBlur] Шейдер Hidden/MotionBlur не найден!");
+            Debug.LogError("[MotionBlur] Шейдер Custom/MotionBlur не найден!");
             enabled = false;
             return;
         }
@@ -74,24 +81,34 @@ public class SimpleMotionBlur : MonoBehaviour
         }
 
         EnsureBuffer(src);
+        
+        // Применяем directional blur
+        RenderTexture blurred = RenderTexture.GetTemporary(
+            src.width, src.height, 0, src.format);
+        
+        blurMat.SetFloat("_BlurSize", blurSize);
+        blurMat.SetInt("_BlurSamples", blurSamples);
+        Graphics.Blit(src, blurred, blurMat, 0);
 
         if (firstFrame)
         {
-            Graphics.Blit(src, accumBuffer, blurMat, 0);
-            Graphics.Blit(accumBuffer, dst, blurMat, 0);
+            Graphics.Blit(blurred, accumBuffer);
+            Graphics.Blit(accumBuffer, dst);
             firstFrame = false;
+            RenderTexture.ReleaseTemporary(blurred);
             return;
         }
 
         RenderTexture temp = RenderTexture.GetTemporary(
             src.width, src.height, 0, src.format);
 
-        blurMat.SetTexture("_CurrTex", src);
+        blurMat.SetTexture("_CurrTex", blurred);
         blurMat.SetFloat("_BlurAmount", blurAmount);
         Graphics.Blit(accumBuffer, temp, blurMat, 1);
-        Graphics.Blit(temp, accumBuffer, blurMat, 0);
-        Graphics.Blit(accumBuffer, dst, blurMat, 0);
+        Graphics.Blit(temp, accumBuffer);
+        Graphics.Blit(accumBuffer, dst);
 
         RenderTexture.ReleaseTemporary(temp);
+        RenderTexture.ReleaseTemporary(blurred);
     }
 }

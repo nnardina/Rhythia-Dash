@@ -52,14 +52,21 @@ public class DefeatMenu : MonoBehaviour
     private void OnRetry()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(
-            SceneManager.GetActiveScene().name);
+        
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade(SceneManager.GetActiveScene().name);
+        else
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     private void OnBackToMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene("Song_Select");
+        
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Song_Select");
+        else
+            SceneManager.LoadScene("Song_Select");
     }
 
     private IEnumerator FadeIn(GameObject target, float duration)

@@ -11,6 +11,7 @@ public class OsuBeatmap
     public int    columnCount        = 4;
     public float  bpm                = 120f;
     public float  firstBeatOffset    = 0f;
+    public int    bossType           = 0;
     public List<NoteData> notes      = new List<NoteData>();
 }
 
@@ -37,10 +38,23 @@ public static class OsuParser
         string[] lines   = File.ReadAllLines(filePath);
         string   section = "";
         bool     firstTimingPointFound = false;
+        int      lineIndex = 0;
 
         foreach (string rawLine in lines)
         {
             string line = rawLine.Trim();
+
+            if (lineIndex == 1 && line.StartsWith("bosstype"))
+            {
+                string[] parts = line.Split('=');
+                if (parts.Length >= 2 && int.TryParse(parts[1].Trim(), out int bossType))
+                {
+                    beatmap.bossType = Mathf.Clamp(bossType, 0, 4);
+                    Debug.Log($"[OsuParser] Boss type: {beatmap.bossType}");
+                }
+            }
+
+            lineIndex++;
 
             if (line.StartsWith("[") && line.EndsWith("]"))
             {

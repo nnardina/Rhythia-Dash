@@ -71,13 +71,21 @@ public class PauseMenu : MonoBehaviour
     {
         Time.timeScale = 1f;
         var current = SceneManager.GetActiveScene().name;
-        SceneManager.LoadScene(current);
+        
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade(current);
+        else
+            SceneManager.LoadScene(current);
     }
 
     public void OnMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene("Song_Select");
+        
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.LoadSceneWithFade("Song_Select");
+        else
+            SceneManager.LoadScene("Song_Select");
     }
 
     public bool IsPaused() => isPaused;
