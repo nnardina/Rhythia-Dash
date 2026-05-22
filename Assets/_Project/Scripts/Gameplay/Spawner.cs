@@ -45,6 +45,7 @@ public class Spawner : MonoBehaviour
     private float preempt;
     private bool ready = false;
     private OsuBeatmap beatmap;
+    private bool isTutorialLevel = false;
 
     public static Spawner instance;
 
@@ -135,6 +136,8 @@ public class Spawner : MonoBehaviour
                 BossHealthBar.Instance.InitFromNoteCount(notes.Count);
 
             bool isTutorial = beatmap.bossType == 0;
+            isTutorialLevel = isTutorial;
+            
             if (isTutorial)
             {
                 if (BossHealthBar.Instance != null)
@@ -168,10 +171,13 @@ public class Spawner : MonoBehaviour
         while (nextIndex < notes.Count &&
                conductor.songPosition >= notes[nextIndex].timeSeconds - preempt)
         {
-            if (notes[nextIndex].timeSeconds >= noteSpawnDelay)
+            if (isTutorialLevel && notes[nextIndex].timeSeconds < noteSpawnDelay)
             {
-                SpawnNote(notes[nextIndex]);
+                nextIndex++;
+                continue;
             }
+            
+            SpawnNote(notes[nextIndex]);
             nextIndex++;
         }
     }
